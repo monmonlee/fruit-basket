@@ -192,6 +192,32 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 .note{font-size:12px;color:var(--muted);text-align:center}
 .app .app{max-width:none;margin:0;width:100%}
 
+/* weekly goal setup */
+.goalrow{display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.goalrow:last-child{border-bottom:0}
+.goalrow svg{width:34px;height:34px}
+.goalrow input{width:100%;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:7px 9px;font-size:15px}
+.goalrow b{font-weight:400;display:block}
+.goalrow small{font-size:12px;color:var(--muted);display:block}
+.sw{width:50px;height:30px;border-radius:99px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+.sw[aria-checked="true"]{background:var(--primary)}
+.sw[aria-checked="true"]::after{transform:translateX(20px)}
+.cnt{display:flex;align-items:center;gap:8px}
+.cnt button{width:32px;height:32px;border-radius:50%;background:var(--bg);border:1px solid var(--line);font-family:var(--num);font-size:18px;line-height:1}
+.cnt output{font-family:var(--num);font-weight:600;font-size:18px;min-width:20px;text-align:center}
+.goalsum{text-align:center;font-size:15px;padding:4px 0}
+.goalsum b{font-family:var(--num);font-size:26px;color:var(--primary)}
+.intro{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+.intro li{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:center}
+.intro svg{width:42px;height:42px}
+.pickone{display:flex;flex-direction:column;gap:8px}
+.pickone button{text-align:left;padding:12px;border-radius:14px;background:var(--card);border:1.5px solid var(--line)}
+.pickone button[aria-checked="true"]{border-color:var(--primary);background:var(--primary-soft)}
+.pickone small{display:block;color:var(--muted);font-size:13px}
+.steps{display:flex;justify-content:center;gap:6px}
+.steps i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.steps i.on{background:var(--primary);width:20px;border-radius:4px}
 /* appearance */
 .seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:4px;gap:4px}
 .seg button{flex:1;padding:8px;border-radius:99px;color:var(--muted);font-size:14px}
@@ -381,8 +407,13 @@ details.menu summary span{font-size:12px;color:var(--muted)}
     <div class="stats" id="stats"></div>
   </section>
 
+  <section class="sec">
+    <h2>每週目標 <span id="goalLine"></span></h2>
+    <button class="addone" data-act="opensettings">調整每週目標（部位、有氧次數、週期功能）</button>
+  </section>
+
   <details class="menu" id="menu">
-    <summary>編輯菜單 <span>背／胸／腿／經期</span></summary>
+    <summary>編輯菜單 <span id="menuParts"></span></summary>
     <div class="tabs" role="tablist" id="mtabs"></div>
     <div class="mrows" id="mrows"></div>
     <div class="mactions"><button id="madd">＋ 加一個動作</button><button class="save" id="msave">儲存菜單</button></div>
@@ -426,8 +457,18 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2213';
-const PARTS=[{k:'back',n:'背',sub:'背日',fruit:'grape',fn:'葡萄'},{k:'chest',n:'胸',sub:'胸・肩・三頭',fruit:'berry',fn:'草莓'},{k:'legs',n:'腿',sub:'腿日',fruit:'melon',fn:'西瓜'},{k:'period',n:'經期',sub:'輕重量，想練哪裡就練哪裡',fruit:'peach',fn:'桃子'}];
+const APP_VERSION='2026.10.24-2220';
+/* every person sets their own week: which lift days, how many cardio sessions, cycle on/off */
+const LIFT_SLOTS=[{k:'back',def:'背',fruit:'grape'},{k:'chest',def:'胸',fruit:'berry'},{k:'legs',def:'腿',fruit:'melon'}];
+const DEFAULT_SET={parts:{back:{on:true,name:'背'},chest:{on:true,name:'胸'},legs:{on:true,name:'腿'}},cardio:3,cycle:true};
+let SET=JSON.parse(JSON.stringify(DEFAULT_SET)), PARTS=[], LIFT_GOAL=3, GOAL=6;
+function applySettings(){
+  PARTS=LIFT_SLOTS.filter(x=>SET.parts[x.k]?.on).map(x=>({k:x.k,n:(SET.parts[x.k].name||x.def).trim()||x.def,sub:'每組留 2–3 下就收',fruit:x.fruit}));
+  LIFT_GOAL=PARTS.length;
+  if(SET.cycle)PARTS.push({k:'period',n:'經期',sub:'輕重量，想練哪裡就練哪裡',fruit:'peach'});
+  GOAL=Math.max(1,LIFT_GOAL+SET.cardio);
+}
+applySettings();
 /* fruits drawn in a 40×40 box centred on 0,0 */
 function fruit(t){
   if(t==='grape-g') return `<path d="M0 -13 Q1 -18 4 -20" stroke="#7A5230" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="7" cy="-16" rx="6" ry="3" fill="#5DBB63" transform="rotate(-20 7 -16)"/>
@@ -477,7 +518,7 @@ const local={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){retu
 /* planAt／departAt are ISO times: when she decided to go, and when she actually left */
 function blankLift(p){return{done:false,date:'',pre:null,post:null,planAt:null,departAt:null,warm:false,cool:false,items:[]}}
 const blankClimb=()=>({done:false,date:'',pre:null,post:null,planAt:null,departAt:null,warm:false,main:false,cool:false});
-function blankWeek(){const lifts={};PARTS.forEach(p=>lifts[p.k]=blankLift());return{lifts,climbs:[blankClimb(),blankClimb(),blankClimb()],extras:[]}}
+function blankWeek(){const lifts={};PARTS.forEach(p=>lifts[p.k]=blankLift());return{lifts,climbs:Array.from({length:SET.cardio},blankClimb),extras:[]}}
 /* menu rows are uniform {name,sets:n,reps,kg} (older ones kept sets as text like "4組" in `detail`) */
 function normItem(m){const sets=Number.isFinite(m.sets)?m.sets:(parseInt(m.detail)||3);return{name:m.name||'',sets,reps:m.reps??'',kg:m.kg??''}}
 /* a session's exercise holds one row per set: {name, sets:[{reps,kg,ok}]} */
@@ -491,7 +532,11 @@ function normalize(w){
   const b=blankWeek(); w=w?clone(w):b;
   w.lifts=w.lifts||b.lifts; PARTS.forEach(p=>{const l=Object.assign(blankLift(),w.lifts[p.k]||{});l.items=l.items.map(normExercise);w.lifts[p.k]=l});
   w.extras=Array.isArray(w.extras)?w.extras:[];
-  w.climbs=(w.climbs&&w.climbs.length===3)?w.climbs.map(c=>Object.assign(blankClimb(),c)):b.climbs; return w;
+  /* fit the cardio slots to the goal, but never drop a session she already logged */
+  let c=(Array.isArray(w.climbs)?w.climbs:[]).map(x=>Object.assign(blankClimb(),x));
+  while(c.length<SET.cardio)c.push(blankClimb());
+  while(c.length>SET.cardio&&!c[c.length-1].done&&!c[c.length-1].planAt)c.pop();
+  w.climbs=c; return w;
 }
 function fillEmptyLifts(){PARTS.forEach(p=>{const l=week.lifts[p.k];if(!l.done&&l.items.length===0)l.items=itemsFromMenu(p.k)})}
 
@@ -530,6 +575,7 @@ function cycleStats(){
   return{ps,len:g.length?Math.round(g.reduce((a,b)=>a+b)/g.length):28,plen:lens.length?Math.round(lens.reduce((a,b)=>a+b)/lens.length):5};
 }
 function phaseOn(d){
+  if(!SET.cycle) return null;
   const {ps,len,plen}=cycleStats(); const k=keyOf(d);
   const cur=[...ps].reverse().find(x=>x.start<=k); if(!cur) return null;
   const day=dayDiff(d,parseKey(cur.start))+1;
@@ -543,6 +589,7 @@ function phaseOn(d){
 }
 function saveCycle(){cycle.periods.sort((a,b)=>a.start<b.start?-1:1);local.set('cycle',cycle)}
 function renderCycle(){
+  $('#cycle').hidden=!SET.cycle; if(!SET.cycle) return;
   const today=new Date(), ph=phaseOn(today), S=ph&&SEASONS[ph.season];
   const head=S?`<div class="cycle-top"><span class="season s-${ph.season}">${S.e} ${S.n}・${S.ph}</span>
       <span class="cycle-sub">${ph.season==='winter'?`經期第 ${ph.day} 天`:`週期第 ${ph.day} 天 · 預計下次 ${md(ph.next)}`}</span></div>
@@ -566,33 +613,37 @@ document.addEventListener('change',e=>{const t=e.target;if(t.dataset.pi==null)re
 /* a week holds 3 lift fruits; a 經期 session can stand in for any of them */
 const liftsDone=w=>PARTS.filter(p=>w.lifts[p.k].done);
 /* each extra session stands in for one missing session */
-const weekTotal=w=>Math.min(6,Math.min(3,liftsDone(w).length)+w.climbs.filter(c=>c.done).length+(w.extras||[]).length);
+const weekTotal=w=>Math.min(GOAL,Math.min(LIFT_GOAL,liftsDone(w).length)+w.climbs.filter(c=>c.done).length+(w.extras||[]).length);
 function count(){if(!week)return 0;return weekTotal(week)}
 const WINTER_MSG=['冬天來了，好好休息也是訓練的一部分','冬天還有去，這顆很珍貴','有去就很棒，記得多喝溫水','練輕一點也算數，累了就回家','身體在辛苦的時候你還在動，很了不起','差一點點，但休息比裝滿籃子重要','冬天也裝滿了，記得好好犒賞自己'];
 function message(n){
   const ph=wk===keyOf(monday(new Date()))?phaseOn(new Date()):null;
-  if(ph&&ph.season==='winter') return WINTER_MSG[n];
-  return ['新的一週，籃子空空的，去摘水果吧','第一顆水果！有去就贏一半','兩顆了，籃子開始有重量','一半了，照這個節奏就好','四顆！今天也可以只是去動一動','只差一顆就裝滿了','整籃裝滿，豐收的一週！'][n];
+  /* seven stages from empty to full, scaled to her own goal */
+  const i=n<=0?0:n>=GOAL?6:Math.min(5,1+Math.floor((n-1)*5/Math.max(1,GOAL-1)));
+  if(ph&&ph.season==='winter') return WINTER_MSG[i];
+  return ['新的一週，籃子空空的，去摘水果吧','第一顆水果！有去就贏一半','籃子開始有重量了','照這個節奏就好','今天也可以只是去動一動','只差一點點就裝滿了','整籃裝滿，豐收的一週！'][i];
 }
 function renderHero(){
   const s=week?week:blankWeek();
-  const back=[{x:72,y:68},{x:120,y:62},{x:168,y:70}], front=[{x:84,y:96},{x:124,y:100},{x:162,y:96}];
-  const placed=[...liftsDone(s).slice(0,3).map((p,i)=>({t:p.fruit,s:'lift:'+p.k,n:p.n+'日',...back[i]})),...s.climbs.map((c,i)=>c.done?{t:'banana',s:'climb:'+i,n:`第 ${i+1} 次有氧`,...front[i]}:null).filter(Boolean)];
-  const free=[...front.filter((_,i)=>!s.climbs[i].done),...back.slice(Math.min(3,liftsDone(s).length))];
-  (s.extras||[]).slice(0,free.length).forEach((x,i)=>placed.push({t:'cherry',s:'extra',n:x.type,...free[i]}));
-  $('#spots').innerHTML=placed.map(f=>`<g transform="translate(${f.x} ${f.y}) scale(1.35)" data-act="tile" data-s="${f.s}" role="button" tabindex="0" aria-label="${f.n}，點一下修改"><circle r="17" fill="transparent"/>${fruit(f.t)}</g>`).join('');
+  /* lay the week's goal out as two rows inside the basket */
+  const nb=Math.ceil(GOAL/2), nf=GOAL-nb, row=(m,y,x0,x1)=>Array.from({length:m},(_,i)=>({x:m===1?(x0+x1)/2:x0+(x1-x0)*i/(m-1),y:y+(m>1?Math.abs(i-(m-1)/2)*2:0)}));
+  const slots=[...row(nb,64,GOAL>6?58:72,GOAL>6?182:168),...row(nf,96,GOAL>6?72:84,GOAL>6?168:162)], sc=GOAL>6?1.1:1.35;
+  const placed=[...liftsDone(s).slice(0,LIFT_GOAL).map(p=>({t:p.fruit,s:'lift:'+p.k,n:p.n+'日'})),
+    ...s.climbs.map((c,i)=>c.done?{t:'banana',s:'climb:'+i,n:`第 ${i+1} 次有氧`}:null).filter(Boolean),
+    ...(s.extras||[]).map(x=>({t:'cherry',s:'extra',n:x.type}))].slice(0,GOAL).map((f,i)=>({...f,...slots[i]}));
+  $('#spots').innerHTML=placed.map(f=>`<g transform="translate(${f.x} ${f.y}) scale(${sc})" data-act="tile" data-s="${f.s}" role="button" tabindex="0" aria-label="${f.n}，點一下修改"><circle r="17" fill="transparent"/>${fruit(f.t)}</g>`).join('');
   /* unpicked fruit float above the basket; tap one to start it */
   const SLOTS=[[12,18],[37,12],[63,12],[88,18],[25,41],[75,41]];
   const gh=[];
   liftOrder().forEach(p=>{const l=s.lifts[p.k];if(!l.done){const [c,t]=status(l);gh.push({s:'lift:'+p.k,f:p.fruit,n:p.n,c,t})}});
   const cd=s.climbs.filter(c=>c.done).length, going=s.climbs.find(c=>!c.done&&(c.planAt||c.departAt));
-  if(cd<3) gh.push({s:'climb',f:'banana',n:'有氧',c:going?'going':'',t:going?status(going)[1]:`${cd}/3`});
+  if(cd<SET.cardio) gh.push({s:'climb',f:'banana',n:'有氧',c:going?'going':'',t:going?status(going)[1]:`${cd}/${SET.cardio}`});
   gh.push({s:'extra',f:'cherry',n:'額外',c:'',t:''});
   $('#ghosts').innerHTML=gh.slice(0,6).map((g,i)=>`<button class="seed ${g.c}" style="left:${SLOTS[i][0]}%;top:${SLOTS[i][1]}%" data-act="tile" data-s="${g.s}" aria-label="開始${g.n}${g.t?'，'+g.t:''}">
     <span class="gb">${icon(g.f)}</span><small>${g.n}${g.t?' · '+g.t:''}</small></button>`).join('');
   $('#todayTitle').textContent=isThisWeek()?'今天要去摘哪一個？':'這週的籃子';
   $('#todaySub').textContent=placed.length?'籃子裡的點了可以修改':'點半透明的水果開始';
-  const n=count(); $('#score').innerHTML=`${n}<small> / 6</small>`; $('#bubble').textContent=message(n);
+  const n=count(); $('#score').innerHTML=`${n}<small> / ${GOAL}</small>`; $('#bubble').textContent=message(n);
   if(lastCount>=0&&n>lastCount){const g=$('#gecko');g.classList.remove('wiggle');void g.offsetWidth;g.classList.add('wiggle')}
   lastCount=n;
 }
@@ -628,8 +679,51 @@ function setDay(k){const {lo,hi}=dayBounds();if(!k||k<lo||k>hi){toast('只能選
   const s=cur();if(s&&s.done){s.date=md(parseKey(k));render();queueSave()}else{pickDay=k;renderSheet()}}
 document.addEventListener('change',e=>{if(e.target.id==='dpick')setDay(e.target.value)});
 
-function liftOrder(){const ph=isThisWeek()?phaseOn(new Date()):null;return ph&&ph.season==='winter'?[PARTS[3],...PARTS.slice(0,3)]:PARTS}
+function liftOrder(){const ph=isThisWeek()?phaseOn(new Date()):null;return ph&&ph.season==='winter'?[...PARTS.filter(p=>p.k==='period'),...PARTS.filter(p=>p.k!=='period')]:PARTS}
 function status(s){return s.done?['done','✓ '+s.date]:s.departAt?['going','出門中']:s.planAt?['going','打算去']:['','']}
+
+/* ---------- weekly goal: first-run setup and later edits ---------- */
+const TEMPLATE_MENUS={back:[{name:'滑輪下拉',sets:3,reps:'10',kg:''},{name:'坐姿划船',sets:3,reps:'10',kg:''},{name:'面拉',sets:3,reps:'12',kg:''}],
+  chest:[{name:'胸推',sets:3,reps:'10',kg:''},{name:'上斜啞鈴臥推',sets:3,reps:'10',kg:''},{name:'蝴蝶機夾胸',sets:3,reps:'12',kg:''}],
+  legs:[{name:'深蹲',sets:3,reps:'8',kg:''},{name:'羅馬尼亞硬舉',sets:3,reps:'10',kg:''},{name:'腿推',sets:3,reps:'10',kg:''}],
+  period:[{name:'腿推（輕重量）',sets:2,reps:'12',kg:''},{name:'滑輪下拉（輕重量）',sets:2,reps:'12',kg:''},{name:'伸展／瑜珈',sets:1,reps:'',kg:''}]};
+let sdraft=null;
+function goalBody(){
+  const d=sdraft, lifts=LIFT_SLOTS.filter(x=>d.parts[x.k].on).length, total=lifts+d.cardio;
+  return `<section class="stage"><h4>重訓部位<span class="tip" style="margin-left:auto">可以改名，例如「上半身」</span></h4>
+    ${LIFT_SLOTS.map(x=>`<div class="goalrow">${icon(x.fruit)}<input id="sn-${x.k}" data-sname="${x.k}" value="${esc(d.parts[x.k].name)}" aria-label="${x.def}的名稱" placeholder="${x.def}">
+      <button class="sw" role="switch" aria-checked="${d.parts[x.k].on}" data-act="stog" data-k="${x.k}" aria-label="每週練${esc(d.parts[x.k].name||x.def)}"></button></div>`).join('')}</section>
+    <section class="stage"><h4>有氧</h4><div class="goalrow">${icon('banana')}<div><b>每週幾次有氧</b><small>跑步、爬坡、飛輪、快走都算</small></div>
+      <div class="cnt"><button data-act="scardio" data-d="-1" aria-label="少一次">−</button><output>${d.cardio}</output><button data-act="scardio" data-d="1" aria-label="多一次">＋</button></div></div></section>
+    <section class="stage"><h4>其他</h4><div class="goalrow">${icon('peach')}<div><b>月經週期</b><small>記錄月經，自動推算四季；經期可以選🍑練輕的</small></div>
+      <button class="sw" role="switch" aria-checked="${d.cycle}" data-act="stog" data-k="cycle" aria-label="月經週期功能"></button></div></section>
+    <p class="goalsum">每週目標 <b>${total}</b> 次<br><small class="tip">重訓 ${lifts} 次＋有氧 ${d.cardio} 次；額外運動也能抵</small></p>`;
+}
+function renderSetup(){
+  const step=sheet.step, dots=`<div class="steps" aria-hidden="true">${[1,2,3].map(i=>`<i class="${i===step?'on':''}"></i>`).join('')}</div>`;
+  let body;
+  if(step===1) body=`${dots}<section class="stage"><h4>歡迎來到水果籃</h4><ul class="intro">
+      <li>${icon('grape')}<span>每週練幾次，籃子就有幾個位置。<b>練完一次，就摘一顆水果放進去。</b></span></li>
+      <li>${icon('berry')}<span>點籃子上方半透明的水果，就開始記錄那次運動。</span></li>
+      <li>${icon('banana')}<span>出門前先按「今天打算去」，app 會算出你拖了多久，也可以記下預估和實際有多累。</span></li>
+      <li>${icon('cherry')}<span>臨時去爬山、游泳也能記，放一顆櫻桃。</span></li></ul></section>
+    <button class="stamp-btn" data-act="snext">下一步：訂每週目標</button>`;
+  else if(step===2) body=`${dots}${goalBody()}<button class="stamp-btn" data-act="snext">下一步</button>`;
+  else body=`${dots}<section class="stage"><h4>菜單要從哪裡開始？</h4><div class="pickone" role="radiogroup">
+      <button role="radio" aria-checked="${sdraft.menu==='template'}" data-act="smenu" data-v="template">用範本菜單<small>每個部位先放 3 個常見動作，之後再改成自己的</small></button>
+      <button role="radio" aria-checked="${sdraft.menu==='blank'}" data-act="smenu" data-v="blank">從空白開始<small>練的時候再一個一個加</small></button></div></section>
+    <p class="tip" style="text-align:center">之後都可以在「每週目標」和「編輯菜單」修改。</p>
+    <button class="stamp-btn" data-act="sdone">開始使用</button>`;
+  return body;
+}
+function saveGoal(firstRun){
+  const d=sdraft; LIFT_SLOTS.forEach(x=>{d.parts[x.k].name=(d.parts[x.k].name||'').trim()||x.def});
+  SET={parts:d.parts,cardio:d.cardio,cycle:d.cycle}; local.set('settings',SET); applySettings();
+  if(firstRun){menus=d.menu==='blank'?{back:[],chest:[],legs:[],period:[]}:JSON.parse(JSON.stringify(TEMPLATE_MENUS));local.set('menus',menus);mdraft=null;
+    week=normalize(null);fillEmptyLifts()}
+  else{week=normalize(week);fillEmptyLifts()}
+  closeSheet();lastCount=-1;render();queueSave();
+}
 
 /* ---------- the session sheet ---------- */
 let sheet=null;   // {t:'lift',k} | {t:'climb',i} | {t:'extra'}
@@ -637,7 +731,7 @@ const CLIMB_STEPS=[['warm','暖身','慢走或輕鬆動 5 分鐘'],['main','有�
 function cur(){if(!week||!sheet)return null;return sheet.t==='lift'?week.lifts[sheet.k]:sheet.t==='climb'?week.climbs[sheet.i]:null}
 function openSheet(s){sheet=s;sel=null;pickDay=defaultDay();xdraft=s.t==='extra'?{type:'爬山',min:'',note:''}:null;
   $('#sheet').hidden=false;document.documentElement.style.overflow='hidden';renderSheet();$('#sheetBody').scrollTop=0;setTimeout(()=>$('#sheetClose')?.focus(),60)}
-function closeSheet(){sheet=null;xdraft=null;$('#sheet').hidden=true;document.documentElement.style.overflow=''}
+function closeSheet(){if(sheet&&sheet.t==='setup'&&!sheet.leaving)return;sheet=null;xdraft=null;$('#sheet').hidden=true;document.documentElement.style.overflow=''}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet)closeSheet();
   if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('#gecko [role=button]')){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
 const chk=(on,attrs,title,sub)=>`<li class="item wc${on?' ok':''}"><div class="irow"><button class="check" ${attrs} aria-pressed="${on}" aria-label="完成${title}">${on?'✓':''}</button>
@@ -704,6 +798,10 @@ function stageEnd(s){
 function renderSheet(){
   if(!sheet||!week) return;
   let ic,title,sub,body;
+  $('#sheetClose').hidden=sheet.t==='setup';
+  if(sheet.t==='setup'||sheet.t==='goal'){
+    $('#sheetIcon').innerHTML=icon('grape');$('#sheetTitle').innerHTML=sheet.t==='setup'?'開始之前<small>30 秒訂好你的每週目標</small>':'每週目標<small>改了之後，這週起就照新目標算</small>';
+    $('#sheetBody').innerHTML=sheet.t==='setup'?renderSetup():goalBody()+'<button class="stamp-btn" data-act="ssave">儲存</button>';return}
   if(sheet.t==='extra'){
     ic='cherry';title='額外運動';sub='每一筆抵一次，放一顆櫻桃';
     const xs=week.extras, other=!XTYPES.slice(0,-1).includes(xdraft.type);
@@ -761,7 +859,11 @@ function renderNudge(){
   $('#nudge').innerHTML=show?`<div class="nudge"><p>${last?`上次備份是 <b>${days} 天前</b>。`:'還沒有備份過。'}紀錄只存在這支手機裡，備份一下比較安心。</p>
     <div class="btnrow"><button data-act="snooze">之後再說</button><button class="main" data-act="backupNow">現在備份</button></div></div>`:'';
 }
-function render(){renderNav();renderNudge();renderCycle();renderHero();renderStats();renderMenu();renderSheet();
+function render(){
+  $('#goalLine').textContent=`每週 ${GOAL} 次：${[...PARTS.filter(p=>p.k!=='period').map(p=>p.n),SET.cardio?`有氧×${SET.cardio}`:''].filter(Boolean).join('、')}`;
+  $('#menuParts').textContent=PARTS.map(p=>p.n).join('／');
+  if(!PARTS.some(p=>p.k===mtab))mtab=PARTS[0]?.k||'back';
+  renderNav();renderNudge();renderCycle();renderHero();renderStats();renderMenu();renderSheet();
   $('#note').textContent='資料存在這支手機的瀏覽器裡，從主畫面圖示打開才會是同一份。'}
 
 /* ---------- events ---------- */
@@ -769,6 +871,13 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]'); if(!b) return;
   const act=b.dataset.act, i=+b.dataset.i;
   if(act==='close'){closeSheet();return}
+  if(act==='opensettings'){sdraft=JSON.parse(JSON.stringify(SET));openSheet({t:'goal'});return}
+  if(act==='stog'){const k=b.dataset.k;if(k==='cycle')sdraft.cycle=!sdraft.cycle;else sdraft.parts[k].on=!sdraft.parts[k].on;renderSheet();return}
+  if(act==='scardio'){sdraft.cardio=Math.max(0,Math.min(7,sdraft.cardio+(+b.dataset.d)));renderSheet();return}
+  if(act==='smenu'){sdraft.menu=b.dataset.v;renderSheet();return}
+  if(act==='snext'){if(sheet.step===2&&!LIFT_SLOTS.some(x=>sdraft.parts[x.k].on)&&!sdraft.cardio){toast('至少選一個部位或一次有氧');return}sheet.step++;renderSheet();$('#sheetBody').scrollTop=0;return}
+  if(act==='sdone'){sheet.leaving=true;saveGoal(true);toast('準備好了，去摘第一顆水果吧！');return}
+  if(act==='ssave'){if(!LIFT_SLOTS.some(x=>sdraft.parts[x.k].on)&&!sdraft.cardio){toast('至少選一個部位或一次有氧');return}saveGoal(false);toast('每週目標更新了');return}
   if(act==='backupNow'){$('#exportBtn').click();return}
   if(act==='snooze'){local.set('backupSnooze',Date.now()+3*864e5);renderNudge();return}
   if(act==='mtab'){mtab=b.dataset.p;renderMenu();return}
@@ -817,12 +926,14 @@ document.addEventListener('input',e=>{
   if(t.dataset.ex&&cur()&&sel){const it=cur().items[sel.i];it.name=t.value;
     const n=document.querySelector(`.bname[data-i="${sel.i}"]`);if(n)n.firstChild.textContent=t.value||'新動作';queueSave()}
   if(t.dataset.m){mdraft[mtab][+t.dataset.i][t.dataset.m]=t.value}
+  if(t.dataset.sname&&sdraft){sdraft.parts[t.dataset.sname].name=t.value}
   if(t.dataset.x&&xdraft){xdraft[t.dataset.x]=t.value}
 });
 $('#madd').addEventListener('click',()=>{mdraft[mtab].push({name:'',sets:3,reps:'',kg:''});renderMenu();const ins=document.querySelectorAll('#mrows input[data-m="name"]');ins[ins.length-1]?.focus()});
 $('#msave').addEventListener('click',async()=>{
   const clean={};PARTS.forEach(p=>clean[p.k]=(mdraft[p.k]||[]).filter(r=>String(r.name).trim()).map(r=>({name:String(r.name).trim(),sets:Math.max(1,parseInt(r.sets)||3),reps:String(r.reps??'').trim(),kg:String(r.kg??'').trim()})));
-  menus=clean; mdraft=clone(clean);
+  /* keep menus of parts that are switched off right now */
+  menus=Object.assign({},menus,clean); mdraft=clone(clean);
   local.set('menus',clean); toast('菜單存好了');
   if(week){PARTS.forEach(p=>{const l=week.lifts[p.k];if(!l.done)l.items=itemsFromMenu(p.k,l.items)});render();queueSave()}
 });
@@ -867,11 +978,12 @@ function renderMonth(){
         <span class="dn">${d.getDate()}</span><span class="ev">${e.slice(0,2).map(x=>icon(x.t==='l'?x.f:x.t==='x'?'cherry':'banana')).join('')}${e.length>2?`<span class="more">+${e.length-2}</span>`:''}</span>${sc?`<span class="sbar" style="background:var(--${sc})"></span>`:''}</button>`;
     }
     const n=weekCount(wid);
-    if(start.getMonth()===mo){ if(n===6)full++; const w=weekWithLive(wid); if(w)collect(normalize(w),pre,post,lag); }
-    rows+=`<div class="wrow">${cells}<span class="wsum${n===6?' full':''}" aria-label="這週完成 ${n} 次">${n}/6</span></div>`;
+    if(start.getMonth()===mo){ if(n>=GOAL)full++; const w=weekWithLive(wid); if(w)collect(normalize(w),pre,post,lag); }
+    rows+=`<div class="wrow">${cells}<span class="wsum${n>=GOAL?' full':''}" aria-label="這週完成 ${n} 次，目標 ${GOAL} 次">${n}/${GOAL}</span></div>`;
     start=new Date(start);start.setDate(start.getDate()+7);
   }
   $('#grid').innerHTML=rows;
+  $('#mlegend').innerHTML=[...PARTS.map(p=>`<span>${icon(p.fruit)}${p.n}</span>`),SET.cardio?`<span>${icon('banana')}有氧</span>`:'',`<span>${icon('cherry')}額外</span>`].join('')+(SET.cycle?Object.entries(SEASONS).map(([k,v])=>`<span><i style="display:inline-block;width:12px;height:3px;border-radius:2px;background:var(--${k})"></i>${v.n}</span>`).join(''):'');
   $('#mstats').innerHTML=`<div class="stat"><span>重訓</span><b>${lifts}</b></div><div class="stat"><span>有氧</span><b>${climbs}</b></div><div class="stat"><span>額外</span><b>${extras}</b></div><div class="stat"><span>全滿的週</span><b>${full}</b></div>
     <div class="stat"><span>預估痛苦</span><b>${avg(pre)}</b></div><div class="stat"><span>實際痛苦</span><b>${avg(post)}</b></div><div class="stat"><span>多想了</span><b>${gap(pre,post)}</b></div><div class="stat"><span>平均拖了</span><b style="font-size:15px">${lagTxt(lag)}</b></div>`;
 }
@@ -936,15 +1048,18 @@ setInterval(checkUpdate,30*60*1000);
 checkUpdate();
 
 /* ---------- boot ---------- */
-{const lg=[...PARTS.map(p=>`<span>${icon(p.fruit)}${p.n}</span>`),`<span>${icon('banana')}有氧</span>`,`<span>${icon('cherry')}額外</span>`].join(''); $('#mlegend').innerHTML=lg+Object.entries(SEASONS).map(([k,v])=>`<span><i style="display:inline-block;width:12px;height:3px;border-radius:2px;background:var(--${k})"></i>${v.n}</span>`).join('')}
 render();
 (()=>{
   try{ navigator.storage?.persist?.() }catch(e){}
   if(!local.get('firstUse'))local.set('firstUse',Date.now());
   loadAllLocal();
-  menus=local.get('menus')||STARTER_MENUS; if(!menus.period)menus.period=STARTER_MENUS.period;
+  const saved=local.get('settings'), returning=!!local.get('menus')||Object.keys(allWeeks).length>0;
+  if(saved){SET=Object.assign(JSON.parse(JSON.stringify(DEFAULT_SET)),saved)}else if(returning){local.set('settings',SET)}
+  applySettings();
+  menus=local.get('menus')||(returning?STARTER_MENUS:TEMPLATE_MENUS); if(!menus.period)menus.period=STARTER_MENUS.period;
   cycle=local.get('cycle')||{periods:[]};
   loadWeek();
+  if(!saved&&!returning){sdraft=Object.assign(JSON.parse(JSON.stringify(DEFAULT_SET)),{menu:'template'});openSheet({t:'setup',step:1})}
 })();
 </script>
 </body>

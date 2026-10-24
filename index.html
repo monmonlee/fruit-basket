@@ -218,6 +218,16 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 .steps{display:flex;justify-content:center;gap:6px}
 .steps i{width:8px;height:8px;border-radius:50%;background:var(--line)}
 .steps i.on{background:var(--primary);width:20px;border-radius:4px}
+/* cardio fruit ladder */
+.ladder{display:flex;align-items:center;justify-content:space-between;gap:2px;padding:6px 0}
+.rung{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;flex:1;opacity:.45;transition:opacity .2s,transform .2s}
+.rung svg{width:34px;height:34px}
+.rung small{font-size:12px;line-height:1.25}
+.rung .th{font-size:11px;color:var(--muted);white-space:nowrap}
+.rung.past{opacity:.7}
+.rung.on{opacity:1;transform:scale(1.15)}
+.rung.on small:first-of-type{color:var(--primary)}
+.step-arrow{color:var(--muted);font-size:14px}
 /* jam shelf: one jar per month */
 .shelf{display:flex;gap:14px;overflow-x:auto;padding:6px 2px 0;scroll-snap-type:x proximity}
 .shelf::after{content:"";flex:0 0 1px}
@@ -524,10 +534,16 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2331';
+const APP_VERSION='2026.10.24-2347';
 /* every person sets their own week: which lift days, how many cardio sessions, cycle on/off */
 const LIFT_SLOTS=[{k:'back',def:'背',fruit:'grape'},{k:'chest',def:'胸',fruit:'berry'},{k:'legs',def:'腿',fruit:'melon'}];
-const DEFAULT_SET={parts:{back:{on:true,name:'背'},chest:{on:true,name:'胸'},legs:{on:true,name:'腿'}},cardio:3,cycle:true,pain:true};
+const DEFAULT_SET={parts:{back:{on:true,name:'背'},chest:{on:true,name:'胸'},legs:{on:true,name:'腿'}},cardio:3,cardioName:'有氧',cycle:true,pain:true};
+/* cardio fruit grows with effort: by distance when given, otherwise by minutes */
+const TIERS=[{f:'blueberry',n:'藍莓',km:0,min:0},{f:'apple',n:'蘋果',km:3,min:20},{f:'pineapple',n:'鳳梨',km:5,min:35},{f:'honeydew',n:'哈密瓜',km:10,min:60}];
+const num=v=>{const x=parseFloat(v);return isFinite(x)&&x>0?x:0};
+function cardioTier(c){const km=num(c.km),mn=num(c.min);if(!km&&!mn)return -1;let t=0;TIERS.forEach((x,i)=>{if(km?km>=x.km:mn>=x.min)t=i});return t}
+const cardioFruit=c=>{const t=cardioTier(c);return t<0?'banana':TIERS[t].f};
+const CN=()=>SET.cardioName||'有氧';
 /* why the pain scores exist, shown wherever they appear */
 const PAIN_WHY='大腦常高估運動有多累（Ruby 等人，2011），出門前先猜、練完再打分，就知道腦袋多想了幾分。';
 let SET=JSON.parse(JSON.stringify(DEFAULT_SET)), PARTS=[], LIFT_GOAL=3, GOAL=6;
@@ -541,6 +557,7 @@ applySettings();
 /* fruits drawn in a 40×40 box centred on 0,0 */
 /* ripe fruit are Noto Emoji images; unripe ones are the same fruit, faded (still growing) */
 const NOTO={grape:'grapes',berry:'strawberry',melon:'watermelon',peach:'peach',banana:'banana',cherry:'cherries',
+  blueberry:'blueberries',apple:'apple',pineapple:'pineapple',honeydew:'melon',
   'grape-g':'grapes','berry-w':'strawberry','melon-g':'watermelon','peach-g':'peach'};
 function fruit(t){
   if(NOTO[t]) return `<image href="icons/fruit/${NOTO[t]}.png" x="-18" y="-18" width="36" height="36"${/-[gw]$/.test(t)?' opacity=".38"':''}/>`;
@@ -590,7 +607,7 @@ const local={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){retu
 
 /* planAt／departAt are ISO times: when she decided to go, and when she actually left */
 function blankLift(p){return{done:false,date:'',pre:null,post:null,planAt:null,departAt:null,warm:false,cool:false,items:[]}}
-const blankClimb=()=>({done:false,date:'',pre:null,post:null,planAt:null,departAt:null,warm:false,main:false,cool:false});
+const blankClimb=()=>({done:false,date:'',pre:null,post:null,planAt:null,departAt:null,warm:false,main:false,cool:false,km:'',min:''});
 function blankWeek(){const lifts={};PARTS.forEach(p=>lifts[p.k]=blankLift());return{lifts,climbs:Array.from({length:SET.cardio},blankClimb),extras:[]}}
 /* menu rows are uniform {name,sets:n,reps,kg} (older ones kept sets as text like "4組" in `detail`) */
 function normItem(m){const sets=Number.isFinite(m.sets)?m.sets:(parseInt(m.detail)||3);return{name:m.name||'',sets,reps:m.reps??'',kg:m.kg??''}}
@@ -713,7 +730,7 @@ function renderHero(){
   const nb=Math.ceil(GOAL/2), nf=GOAL-nb, row=(m,y,x0,x1)=>Array.from({length:m},(_,i)=>({x:m===1?(x0+x1)/2:x0+(x1-x0)*i/(m-1),y:y+(m>1?Math.abs(i-(m-1)/2)*2:0)}));
   const slots=[...row(nb,60,GOAL>6?58:72,GOAL>6?182:168),...row(nf,88,GOAL>6?72:86,GOAL>6?168:158)], sc=GOAL>6?1:1.2;
   const placed=[...liftsDone(s).slice(0,LIFT_GOAL).map(p=>({t:p.fruit,s:'lift:'+p.k,n:p.n+'日'})),
-    ...s.climbs.map((c,i)=>c.done?{t:'banana',s:'climb:'+i,n:`第 ${i+1} 次有氧`}:null).filter(Boolean),
+    ...s.climbs.map((c,i)=>c.done?{t:cardioFruit(c),s:'climb:'+i,n:`第 ${i+1} 次${CN()}`}:null).filter(Boolean),
     ...(s.extras||[]).map(x=>({t:'cherry',s:'extra',n:x.type}))].slice(0,GOAL).map((f,i)=>({...f,...slots[i]}));
   const grew=lastCount>=0&&count()>lastCount;
   $('#spots').innerHTML=placed.map((f,i)=>`<g transform="translate(${f.x} ${f.y}) scale(${sc})" data-act="tile" data-s="${f.s}" role="button" tabindex="0" aria-label="${f.n}，點一下修改"><g class="${grew&&i===placed.length-1?'dropin':''}"><circle r="17" fill="transparent"/>${fruit(f.t)}</g></g>`).join('');
@@ -722,7 +739,7 @@ function renderHero(){
   const gh=[];
   liftOrder().forEach(p=>{const l=s.lifts[p.k];if(!l.done){const [c,t]=status(l);gh.push({s:'lift:'+p.k,f:p.fruit,n:p.n,c,t})}});
   const cd=s.climbs.filter(c=>c.done).length, going=s.climbs.find(c=>!c.done&&(c.planAt||c.departAt));
-  if(cd<SET.cardio) gh.push({s:'climb',f:'banana',n:'有氧',c:going?'going':'',t:going?status(going)[1]:`${cd}/${SET.cardio}`});
+  if(cd<SET.cardio) gh.push({s:'climb',f:'banana',n:CN(),c:going?'going':'',t:going?status(going)[1]:`${cd}/${SET.cardio}`});
   gh.push({s:'extra',f:'cherry',n:'額外',c:'',t:''});
   $('#ghosts').innerHTML=gh.slice(0,6).map((g,i)=>`<button class="seed ${g.c}" style="left:${SLOTS[i][0]}%;top:${SLOTS[i][1]}%" data-act="tile" data-s="${g.s}" aria-label="開始${g.n}${g.t?'，'+g.t:''}">
     <span class="gb">${icon(g.f)}</span><small>${g.n}${g.t?' · '+g.t:''}</small></button>`).join('');
@@ -781,7 +798,8 @@ function goalBody(){
   return `<section class="stage"><h4>重訓部位<span class="tip" style="margin-left:auto">可以改名，例如「上半身」</span></h4>
     ${LIFT_SLOTS.map(x=>`<div class="goalrow">${icon(x.fruit)}<input id="sn-${x.k}" data-sname="${x.k}" value="${esc(d.parts[x.k].name)}" aria-label="${x.def}的名稱" placeholder="${x.def}">
       <button class="sw" role="switch" aria-checked="${d.parts[x.k].on}" data-act="stog" data-k="${x.k}" aria-label="每週練${esc(d.parts[x.k].name||x.def)}"></button></div>`).join('')}</section>
-    <section class="stage"><h4>有氧</h4><div class="goalrow">${icon('banana')}<div><b>每週幾次有氧</b><small>跑步、爬坡、飛輪、快走都算</small></div>
+    <section class="stage"><h4>有氧<span class="tip" style="margin-left:auto">可以改名，例如「跑步」</span></h4><div class="goalrow">${icon('banana')}<input id="cn" data-cname value="${esc(d.cardioName||'有氧')}" aria-label="有氧的名稱" placeholder="有氧"><span></span></div>
+      <div class="goalrow"><span></span><div><b>每週幾次</b><small>跑步、爬坡、飛輪、快走都算</small></div>
       <div class="cnt"><button data-act="scardio" data-d="-1" aria-label="少一次">−</button><output>${d.cardio}</output><button data-act="scardio" data-d="1" aria-label="多一次">＋</button></div></div></section>
     <section class="stage"><h4>其他</h4><div class="goalrow">${icon('peach')}<div><b>月經週期</b><small>記錄月經，自動推算四季；經期可以選🍑練輕的</small></div>
       <button class="sw" role="switch" aria-checked="${d.cycle}" data-act="stog" data-k="cycle" aria-label="月經週期功能"></button></div>
@@ -808,7 +826,7 @@ function renderSetup(){
 }
 function saveGoal(firstRun){
   const d=sdraft; LIFT_SLOTS.forEach(x=>{d.parts[x.k].name=(d.parts[x.k].name||'').trim()||x.def});
-  SET={parts:d.parts,cardio:d.cardio,cycle:d.cycle,pain:d.pain}; local.set('settings',SET); applySettings();
+  SET={parts:d.parts,cardio:d.cardio,cardioName:(d.cardioName||'').trim()||'有氧',cycle:d.cycle,pain:d.pain}; local.set('settings',SET); applySettings();
   if(firstRun){menus=d.menu==='blank'?{back:[],chest:[],legs:[],period:[]}:JSON.parse(JSON.stringify(TEMPLATE_MENUS));local.set('menus',menus);mdraft=null;
     week=normalize(null);fillEmptyLifts()}
   else{week=normalize(week);fillEmptyLifts()}
@@ -817,7 +835,7 @@ function saveGoal(firstRun){
 
 /* ---------- the session sheet ---------- */
 let sheet=null;   // {t:'lift',k} | {t:'climb',i} | {t:'extra'}
-const CLIMB_STEPS=[['warm','暖身','慢走或輕鬆動 5 分鐘'],['main','有氧 30 分鐘','前 5–10 分鐘放慢，維持在能講話的速度'],['cool','收操','慢走＋伸展練到的部位']];
+const CLIMB_STEPS=[['warm','暖身','慢走或輕鬆動 5 分鐘'],['cool','收操','慢走＋伸展練到的部位']];
 function cur(){if(!week||!sheet)return null;return sheet.t==='lift'?week.lifts[sheet.k]:sheet.t==='climb'?week.climbs[sheet.i]:null}
 function openSheet(s){sheet=s;delete sheet.diff;sel=null;pickDay=defaultDay();xdraft=s.t==='extra'?{type:'爬山',min:'',note:''}:null;
   $('#sheet').hidden=false;document.documentElement.style.overflow='hidden';renderSheet();$('#sheetBody').scrollTop=0;setTimeout(()=>$('#sheetClose')?.focus(),60)}
@@ -878,10 +896,20 @@ function stageDo(s){
       <div class="harvest"><span>採收 <b>${done.length}/${all.length}</b> 顆</span><span>總重量 <b>${Math.round(vol).toLocaleString()}</b> kg</span></div>
       <button class="addone" data-act="iadd">＋ 種一株新的（新動作）</button>`;
   }else{
-    list=`<ul class="items">${CLIMB_STEPS.map(([f,a,b])=>chk(s[f],`data-act="wc" data-f="${f}"`,a,b)).join('')}</ul>`;
+    const km=num(s.km), mn=num(s.min), t=cardioTier(s), nx=TIERS[t+1];
+    const pace=km&&mn?(()=>{const p=mn/km,m=Math.floor(p),sec=Math.round((p-m)*60);return `${m}'${String(sec).padStart(2,'0')}" /公里`})():'';
+    const need=!nx?'已經是最大顆的哈密瓜了！':km?`再 ${(nx.km-km).toFixed(1)} 公里，就升級成${nx.n}！`:mn?`再 ${Math.ceil(nx.min-mn)} 分鐘，就升級成${nx.n}！`:'填距離或時間，看看今天能摘到哪一種';
+    const wc=f=>`<button class="wcbtn${s[f]?' ok':''}" data-act="wc" data-f="${f}" aria-pressed="${s[f]}"><span class="check">${s[f]?'✓':''}</span><span>${f==='warm'?'暖身':'收操'}<br><small class="tip">${f==='warm'?'慢走 5 分鐘':'慢走＋伸展'}</small></span></button>`;
+    list=`<div class="wcrow">${wc('warm')}${wc('cool')}</div>
+      <div class="two"><div class="fld"><label for="ckm">距離（公里）</label><input id="ckm" data-cardio="km" value="${esc(s.km)}" inputmode="decimal" placeholder="例：5"></div>
+      <div class="fld"><label for="cmin">時間（分鐘）</label><input id="cmin" data-cardio="min" value="${esc(s.min)}" inputmode="numeric" placeholder="例：30"></div></div>
+      <div class="ladder" id="ladder">${ladderHTML(s)}</div>
+      <p class="harvest" style="justify-content:center"><span id="ladderMsg">${need}</span>${pace?`<span id="pace">配速 <b>${pace}</b></span>`:'<span id="pace"></span>'}</p>`;
   }
-  return `<section class="stage${s.departAt&&!s.done?' cur':''}"><h4><i>2</i>${sheet.t==='lift'?`今天的${GARDEN[sheet.k].n}<span class="tip" style="margin-left:auto">點果實改那一組</span>`:'有氧'}</h4>${list}</section>`;
+  return `<section class="stage${s.departAt&&!s.done?' cur':''}"><h4><i>2</i>${sheet.t==='lift'?`今天的${GARDEN[sheet.k].n}<span class="tip" style="margin-left:auto">點果實改那一組</span>`:`今天的果實<span class="tip" style="margin-left:auto">越努力，水果越大</span>`}</h4>${list}</section>`;
 }
+function ladderHTML(s){const t=cardioTier(s);
+  return TIERS.map((x,i)=>`<div class="rung${i===t?' on':''}${i<t?' past':''}">${icon(x.f)}<small>${x.n}</small><small class="th">${i?`${x.km} 公里｜${x.min} 分`:'起步'}</small></div>`).join('<span class="step-arrow">›</span>')}
 function stageEnd(s){
   const day=s.done?(keyOfMD(s.date)||pickDay):pickDay;
   return `<section class="stage"><h4><i>3</i>練完</h4>${SET.pain?stepper('post','實際有多痛苦？',s.post):''}${datePicker(day)}
@@ -909,7 +937,7 @@ function renderSheet(){
   }else{
     const s=cur();
     if(sheet.t==='lift'){const P=PARTS.find(p=>p.k===sheet.k);ic=P.fruit;title=P.n+'日';sub=P.sub}
-    else{ic='banana';title='有氧 30 分鐘';sub='跑步、爬坡、飛輪、快走都可以'}
+    else{ic=cardioFruit(cur()||{});title=CN();sub='跑步、爬坡、飛輪、快走都可以'}
     if(sheet.diff){const d=sheet.diff, row=(n,kind)=>`<li class="item wc${d.pick[n]?' ok':''}"><div class="irow"><button class="check" data-act="dpick" data-n="${esc(n)}" aria-pressed="${!!d.pick[n]}" aria-label="${kind}${esc(n)}">${d.pick[n]?'✓':''}</button>
         <div class="nm"><b>${esc(n)}</b><span>${kind==='加進'?'這次新增的，加進固定菜單':'這次沒做，從固定菜單拿掉'}</span></div><span></span></div></li>`;
       $('#sheetIcon').innerHTML=icon(ic);$('#sheetTitle').innerHTML=`${title}打卡了！<small>這次和固定菜單不太一樣</small>`;
@@ -1038,7 +1066,7 @@ document.addEventListener('click',e=>{
     else toast(`${PARTS.find(x=>x.k===sheet.k).n}日打卡！`);
     closeSheet();render();return}
   if(act==='done'){s.done=!s.done;s.date=s.done?md(parseKey(pickDay)):'';
-    if(s.done){toast(`${sheet.t==='lift'?PARTS.find(x=>x.k===sheet.k).n+'日':'有氧'}打卡！${pickDay!==keyOf(new Date())?'（算在 '+md(parseKey(pickDay))+'）':''}`);closeSheet()}}
+    if(s.done){toast(`${sheet.t==='lift'?PARTS.find(x=>x.k===sheet.k).n+'日':CN()}打卡！${sheet.t==='climb'&&cardioTier(s)>=0?'摘到'+TIERS[cardioTier(s)].n+'！':''}${pickDay!==keyOf(new Date())?'（算在 '+md(parseKey(pickDay))+'）':''}`);closeSheet()}}
   if(act==='xsave'){const t=String(xdraft.type).trim();if(!t||t==='其他'){toast('先寫下是什麼運動');return}
     week.extras.push({type:t,min:String(xdraft.min).trim(),note:String(xdraft.note).trim(),date:md(parseKey(pickDay))});closeSheet();toast('櫻桃 +1！')}
   if(act==='xdel'){week.extras.splice(i,1)}
@@ -1052,6 +1080,11 @@ document.addEventListener('input',e=>{
     const n=document.querySelector(`.bname[data-i="${sel.i}"]`);if(n)n.firstChild.textContent=t.value||'新動作';queueSave()}
   if(t.dataset.m){mdraft[mtab][+t.dataset.i][t.dataset.m]=t.value}
   if(t.dataset.sname&&sdraft){sdraft.parts[t.dataset.sname].name=t.value}
+  if('cname' in t.dataset&&sdraft){sdraft.cardioName=t.value}
+  if(t.dataset.cardio&&cur()){const s=cur();s[t.dataset.cardio]=t.value;queueSave();
+    const km=num(s.km),mn=num(s.min),ti=cardioTier(s),nx=TIERS[ti+1];$('#ladder').innerHTML=ladderHTML(s);$('#sheetIcon').innerHTML=icon(cardioFruit(s));
+    $('#ladderMsg').textContent=!nx?'已經是最大顆的哈密瓜了！':km?`再 ${(nx.km-km).toFixed(1)} 公里，就升級成${nx.n}！`:mn?`再 ${Math.ceil(nx.min-mn)} 分鐘，就升級成${nx.n}！`:'填距離或時間，看看今天能摘到哪一種';
+    const p=km&&mn?mn/km:0;$('#pace').innerHTML=p?`配速 <b>${Math.floor(p)}'${String(Math.round((p-Math.floor(p))*60)).padStart(2,'0')}" /公里</b>`:''}
   if(t.dataset.x&&xdraft){xdraft[t.dataset.x]=t.value}
 });
 $('#madd').addEventListener('click',()=>{mdraft[mtab].push({name:'',sets:3,reps:'',kg:''});renderMenu();const ins=document.querySelectorAll('#mrows input[data-m="name"]');ins[ins.length-1]?.focus()});
@@ -1078,7 +1111,7 @@ function eventsByDay(){
     for(let i=0;i<7;i++){const d=new Date(m);d.setDate(m.getDate()+i);days[md(d)]=keyOf(d)}
     const push=(date,e)=>{const k=days[date];if(k)(ev[k]=ev[k]||[]).push(e)};
     PARTS.forEach(p=>{const l=w.lifts[p.k];if(l.done)push(l.date,{t:'l',n:p.n,f:p.fruit})});
-    w.climbs.forEach(c=>{if(c.done)push(c.date,{t:'c'})});
+    w.climbs.forEach(c=>{if(c.done)push(c.date,{t:'c',f:cardioFruit(c)})});
     w.extras.forEach(x=>push(x.date,{t:'x',n:x.type}));
   });
   return ev;
@@ -1097,10 +1130,10 @@ function renderMonth(){
     for(let i=0;i<7;i++){
       const d=new Date(start);d.setDate(start.getDate()+i);const k=keyOf(d),inM=d.getMonth()===mo,e=ev[k]||[];
       if(inM){lifts+=e.filter(x=>x.t==='l').length;climbs+=e.filter(x=>x.t==='c').length;extras+=e.filter(x=>x.t==='x').length}
-      const label=`${d.getMonth()+1}月${d.getDate()}日${e.length?'，'+e.map(x=>x.t==='l'?x.n+'日':x.t==='x'?x.n:'有氧').join('、'):''}`;
+      const label=`${d.getMonth()+1}月${d.getDate()}日${e.length?'，'+e.map(x=>x.t==='l'?x.n+'日':x.t==='x'?x.n:CN()).join('、'):''}`;
       const ph=phaseOn(d), sc=ph?ph.season:'';
       cells+=`<button class="day${inM?'':' out'}${k===todayK?' today':''}${sc==='winter'?' s-winter':''}" data-goto="${wid}" aria-label="${label}${ph?'，'+SEASONS[sc].n+'季':''}">
-        <span class="dn">${d.getDate()}</span><span class="ev">${e.slice(0,2).map(x=>icon(x.t==='l'?x.f:x.t==='x'?'cherry':'banana')).join('')}${e.length>2?`<span class="more">+${e.length-2}</span>`:''}</span>${sc?`<span class="sbar" style="background:var(--${sc})"></span>`:''}</button>`;
+        <span class="dn">${d.getDate()}</span><span class="ev">${e.slice(0,2).map(x=>icon(x.t==='x'?'cherry':x.f)).join('')}${e.length>2?`<span class="more">+${e.length-2}</span>`:''}</span>${sc?`<span class="sbar" style="background:var(--${sc})"></span>`:''}</button>`;
     }
     const n=weekCount(wid);
     if(start.getMonth()===mo){ if(n>=GOAL)full++; const w=weekWithLive(wid); if(w)collect(normalize(w),pre,post,lag); }
@@ -1109,8 +1142,8 @@ function renderMonth(){
   }
   $('#grid').innerHTML=rows;
   renderShelf();
-  $('#mlegend').innerHTML=[...PARTS.map(p=>`<span>${icon(p.fruit)}${p.n}</span>`),SET.cardio?`<span>${icon('banana')}有氧</span>`:'',`<span>${icon('cherry')}額外</span>`].join('')+(SET.cycle?Object.entries(SEASONS).map(([k,v])=>`<span><i style="display:inline-block;width:12px;height:3px;border-radius:2px;background:var(--${k})"></i>${v.n}</span>`).join(''):'');
-  $('#mstats').innerHTML=`<div class="stat"><span>重訓</span><b>${lifts}</b></div><div class="stat"><span>有氧</span><b>${climbs}</b></div><div class="stat"><span>額外</span><b>${extras}</b></div><div class="stat"><span>全滿的週</span><b>${full}</b></div>
+  $('#mlegend').innerHTML=[...PARTS.map(p=>`<span>${icon(p.fruit)}${p.n}</span>`),SET.cardio?`<span>${icon('banana')}${esc(CN())}</span>`:'',`<span>${icon('cherry')}額外</span>`].join('')+(SET.cycle?Object.entries(SEASONS).map(([k,v])=>`<span><i style="display:inline-block;width:12px;height:3px;border-radius:2px;background:var(--${k})"></i>${v.n}</span>`).join(''):'');
+  $('#mstats').innerHTML=`<div class="stat"><span>重訓</span><b>${lifts}</b></div><div class="stat"><span>${esc(CN())}</span><b>${climbs}</b></div><div class="stat"><span>額外</span><b>${extras}</b></div><div class="stat"><span>全滿的週</span><b>${full}</b></div>
     ${SET.pain?`<div class="stat"><span>預估痛苦</span><b>${avg(pre)}</b></div><div class="stat"><span>實際痛苦</span><b>${avg(post)}</b></div><div class="stat"><span>多想了</span><b>${gap(pre,post)}</b></div>`:''}<div class="stat"><span>平均拖了</span><b style="font-size:15px">${lagTxt(lag)}</b></div>`;
 }
 function setView(v){view=v;$('#weekView').hidden=v!=='week';$('#monthView').hidden=v!=='month';$('#setView').hidden=v!=='settings';
@@ -1183,10 +1216,10 @@ function rain(kinds,n=28){
 const centerOf=el=>{const r=el.getBoundingClientRect();return[r.left+r.width/2,r.top+r.height/2]};
 
 /* ---------- jam jars: one per month ---------- */
-const JAM={grape:'#7B4BC4',berry:'#D93A4A',melon:'#E8566A',peach:'#F2945F',banana:'#E2B23A',cherry:'#A8203A'};
+const JAM={grape:'#7B4BC4',berry:'#D93A4A',melon:'#E8566A',peach:'#F2945F',banana:'#E2B23A',cherry:'#A8203A',blueberry:'#4B5FC4',apple:'#D23B3B',pineapple:'#E9B53A',honeydew:'#9CC96B'};
 function monthTally(y,mo){
   const ev=eventsByDay(), last=new Date(y,mo+1,0), by={}; let total=0;
-  for(let d=1;d<=last.getDate();d++){(ev[keyOf(new Date(y,mo,d))]||[]).forEach(e=>{const f=e.t==='l'?e.f:e.t==='x'?'cherry':'banana';by[f]=(by[f]||0)+1;total++})}
+  for(let d=1;d<=last.getDate();d++){(ev[keyOf(new Date(y,mo,d))]||[]).forEach(e=>{const f=e.t==='x'?'cherry':e.f;by[f]=(by[f]||0)+1;total++})}
   const top=Object.entries(by).sort((a,b)=>b[1]-a[1])[0];
   return{total,fill:Math.min(1,total/(GOAL*last.getDate()/7)),color:top?JAM[top[0]]:null,top:top?.[0]};
 }

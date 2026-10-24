@@ -522,7 +522,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2257';
+const APP_VERSION='2026.10.24-2310';
 /* every person sets their own week: which lift days, how many cardio sessions, cycle on/off */
 const LIFT_SLOTS=[{k:'back',def:'背',fruit:'grape'},{k:'chest',def:'胸',fruit:'berry'},{k:'legs',def:'腿',fruit:'melon'}];
 const DEFAULT_SET={parts:{back:{on:true,name:'背'},chest:{on:true,name:'胸'},legs:{on:true,name:'腿'}},cardio:3,cycle:true,pain:true};
@@ -1223,8 +1223,8 @@ const SRC={
   mood:'統合分析（103 篇研究、4,671 人）：運動結束 30 分鐘內，心情、焦慮和憂鬱感通常都會改善',
   anx:'統合分析：單次有氧運動能降低當下的焦慮，無氧運動比較沒有這個效果',
   tired:'統合分析：輕到中強度、20 分鐘以上的運動，最能降低疲勞感'};
-const KIND={rest:['😴','今天休息！','rest'],go:['🏃','你應該去運動！','go'],easy:['🚶','去，但輕鬆版！','go'],peach:['🍑','經期輕版！','go'],
-  swap:['🔀','換個部位練！','go'],morning:['🌅','約好明天早上！','rest'],stretch:['🧘','伸展就好！','rest'],choose:['🤝','兩個都可以！','rest']};
+const KIND={rest:['😴','今天准你休息！','rest'],go:['🏃','判決：去運動！','go'],easy:['🚶','去，但慢慢來！','go'],peach:['🍑','經期模式啟動！','go'],
+  swap:['🔀','換個地方練！','go'],morning:['🌅','約定成立！','rest'],stretch:['🧘','伸展一下就好！','rest'],choose:['🤝','你決定就好！','rest']};
 /* the lift day she has gone longest without this week */
 function leastRecent(){
   const lifts=PARTS.filter(p=>p.k!=='period'); if(!lifts.length) return null;
@@ -1237,52 +1237,52 @@ function deckNodes(){
   const afterSleep=SET.cycle?'q5':'q6';
   return{
     start:{intro:true},
-    q1:{q:'你現在有發燒嗎？',o:[['有','額頭燙燙的、體溫超過 37.5 度、一直發冷','r_fever'],['沒有','','q2']]},
-    q2:{q:'有感冒症狀嗎？不舒服的地方在哪？',o:[['只有鼻子、喉嚨','鼻塞、流鼻水、打噴嚏、喉嚨癢癢的','r_cold_light'],['胸口或全身','咳嗽有痰、胸悶、全身痠痛、拉肚子、想吐','r_cold_rest'],['沒有感冒','','q3']]},
-    q3:{q:'身體有哪裡在痛嗎？',o:[['一個很明確的點在痛','例如膝蓋某一點、手腕、下背某處；一動就刺痛或腫起來','q3a'],['整塊肌肉痠痠的','前幾天練過的地方，按下去很痠','q3b'],['都沒有','','q4']]},
-    q3a:{q:'痛到走路、拿東西都受影響嗎？',o:[['是','','r_injury'],['不會','只有某些動作會痛','r_swap']]},
-    q3b:{q:'痠了幾天？',o:[['1–3 天','','r_doms'],['4 天以上，或越來越痛','','r_overtrain']]},
-    q4:{q:'昨晚睡了多久？',o:[['6 小時以上','',afterSleep],['不到 6 小時','','q4a']]},
-    q4a:{q:'現在睏到眼睛快閉上了嗎？',o:[['是，超睏','','r_sleep'],['還撐得住','','r_sleep_light']]},
+    q1:{q:'你現在有發燒嗎？',o:[['有，額頭可以煎蛋了','體溫超過 37.5 度、一直發冷','r_fever'],['沒有','','q2']]},
+    q2:{q:'有感冒嗎？難受的地方在哪？',o:[['只有鼻子、喉嚨','鼻塞、狂打噴嚏、喉嚨癢癢的','r_cold_light'],['胸口或全身','咳嗽有痰、胸悶、全身痠痛、拉肚子、想吐','r_cold_rest'],['沒有感冒','','q3']]},
+    q3:{q:'身體有哪裡在痛嗎？',o:[['一個很明確的點在痛','例如膝蓋某一點、手腕、下背某處；一動就刺痛或腫起來','q3a'],['整塊肌肉痠痠的','前幾天練過的地方，按下去很痠','q3b'],['都沒有，我很好','','q4']]},
+    q3a:{q:'痛到連走路、拿東西都卡卡的嗎？',o:[['是，像生鏽的機器人','','r_injury'],['沒那麼誇張','只有某些動作會痛','r_swap']]},
+    q3b:{q:'痠幾天了？',o:[['1–3 天','上下樓梯會哀哀叫','r_doms'],['4 天以上，還越來越痛','','r_overtrain']]},
+    q4:{q:'昨晚睡了多久？',o:[['6 小時以上','',afterSleep],['不到 6 小時','我是夜貓子','q4a']]},
+    q4a:{q:'現在睏到眼皮可以夾住一支筆嗎？',o:[['可以，夾兩支','','r_sleep'],['還撐得住','','r_sleep_light']]},
     q5:{q:'現在是經期嗎？',o:[['不是','','q6'],['是','','q5a']]},
-    q5a:{q:'痛的程度？',o:[['很痛','要吃止痛藥、只想躺平','r_period_rest'],['悶悶的痛','','r_period_light'],['還好，不太痛','','q6']]},
-    q6:{q:'肚子現在怎麼樣？',o:[['很餓','','t_hungry'],['剛吃很飽','','t_full'],['剛剛好','','q7']]},
-    q7:{q:'現在離你睡覺還有多久？',o:[['2 小時以上','','q8'],['1–2 小時','','t_late'],['不到 1 小時','','q7a']]},
-    q7a:{q:'明天早上真的會起來運動嗎？',sub:'誠實回答就好',o:[['會，已經想好幾點','','r_morning'],['不太確定','','r_stretch_night']]},
-    q8:{q:'老實說，你累的是哪一種？',o:[['想到就累','還沒開始就覺得好累，但身體其實還好','r_brain'],['腦袋當機','上班用腦過度，不想再做任何決定','r_nobrain'],['心情很差','','q8a'],['身體真的累','腿很重、全身沒力','q9']]},
+    q5a:{q:'痛的程度？',o:[['痛到想跟子宮談判','要吃止痛藥、只想躺平','r_period_rest'],['悶悶的痛','','r_period_light'],['還好，小意思','','q6']]},
+    q6:{q:'肚子現在怎麼樣？',o:[['餓到可以吃下一頭牛','','t_hungry'],['剛吃很飽，還在消化','','t_full'],['剛剛好','','q7']]},
+    q7:{q:'現在離你睡覺還有多久？',o:[['2 小時以上，時間還早','','q8'],['1–2 小時','','t_late'],['不到 1 小時','','q7a']]},
+    q7a:{q:'明天早上真的會起來運動嗎？',sub:'摸著良心回答',o:[['會，鬧鐘已經設好了','','r_morning'],['……大概不會','','r_stretch_night']]},
+    q8:{q:'老實說，你累的是哪一種？',o:[['想到就累','還沒開始就累了，但身體其實還好','r_brain'],['腦袋當機','上班已經做了一百個決定','r_nobrain'],['心情很差','','q8a'],['身體真的累','腿像灌了水泥','q9']]},
     q8a:{q:'比較像哪一種心情？',o:[['😔 低落、提不起勁','不想做任何事、什麼都覺得沒意思','q8b'],['😰 焦慮、腦袋停不下來','一直想事情、心跳快、靜不下來','r_anx'],['😤 煩躁、生氣','看什麼都不順眼','r_angry'],['🫠 心很累、被掏空','最近壓力很大，情緒一直撐著','q8c'],['💔 發生了很難過的事','吵架、失戀、壞消息','r_sad']]},
     q8b:{q:'想出門嗎？',o:[['想','','r_low_walk'],['不想見人','','r_low_home']]},
     q8c:{q:'這種感覺已經持續超過兩週了嗎？',o:[['是','','r_burn_rest'],['還沒','','r_burn_choose']]},
-    q9:{q:'願意走過去，做 20–30 分鐘輕鬆的嗎？',o:[['願意','','r_easy20'],['不願意','','q10']]},
-    q10:{q:`這週已經摘到一半以上的水果了嗎？`,sub:`現在 ${n}/${GOAL} 顆`,o:[['有','','r_earned'],['還沒','','r_tomorrow']]},
-    t_hungry:{tip:'先吃一根香蕉或一片吐司，30 分鐘後再出門。',ev:R(SRC.snack),to:'q7'},
-    t_full:{tip:'先散步一下，或等 1 小時再開始。',ev:T('剛吃飽就激烈運動容易肚子不舒服'),to:'q7'},
-    t_late:{tip:'今天做中等強度就好，不要練到上氣不接下氣。',ev:R(SRC.night),to:'q8'},
-    r_fever:{v:'rest',line:'多喝水、早點睡，等燒退了再回來摘水果。',ev:R(SRC.neck)},
-    r_cold_light:{v:'easy',line:'散步、輕踩飛輪或伸展，強度減半；越動越不舒服就停。',ev:R(SRC.neck)},
-    r_cold_rest:{v:'rest',line:'身體正在對抗病毒，把力氣留給它。',ev:R(SRC.neck)},
-    r_injury:{v:'rest',line:'冰敷、休息；痛超過 3 天就去看醫生。',ev:T('會讓動作變形、固定一點的尖銳疼痛，通常是受傷訊號，不是一般痠痛')},
-    r_swap:{v:'swap',line:`避開痛的地方：今天改練${part}，或做不會用到那裡的有氧。`,ev:T('局部不舒服時，換練其他部位是常見做法')},
-    r_doms:{v:'go',line:`練別的部位（例如${part}），或做輕鬆的有氧；動一動反而好得比較快。`,ev:T('延遲性肌肉痠痛通常 1–3 天會退，輕度活動有助恢復')},
-    r_overtrain:{v:'rest',line:'給身體幾天恢復，這幾天散步就好。',ev:T('教練常用的過度訓練訊號：痠痛超過 3–4 天、輕鬆的課表也變得很吃力')},
-    r_sleep:{v:'rest',line:'今天早點睡，肌肉是在睡覺時長的。',ev:R(SRC.sleep)},
-    r_sleep_light:{v:'easy',line:'今天不要挑戰重量，熟悉的動作做輕一點。',ev:R(SRC.sleep)},
-    r_period_rest:{v:'rest',line:'熱敷肚子、多喝溫水，好好過冬。',ev:T('痛到需要止痛藥時，先讓身體休息')},
-    r_period_light:{v:'peach',line:'做 20 分鐘瑜珈或輕重量，舒服就好。',ev:R(SRC.period)},
-    r_morning:{v:'morning',line:'現在就把運動服放床邊、鬧鐘設好。',ev:T('先把明天要用的東西準備好，比較容易真的做到')},
-    r_stretch_night:{v:'stretch',line:'現在做 15 分鐘伸展，然後去睡覺。',ev:R(SRC.night)},
-    r_brain:{v:'go',line:'那是腦袋在播誇張的預告片，實際去了通常沒那麼痛。',ev:R(SRC.brain)},
-    r_nobrain:{v:'go',line:`不用想，照做：熱身 → ${part}的前兩個動作${first} → 收操，30 分鐘結束。`,ev:R(SRC.mental)},
-    r_low_walk:{v:'easy',line:'出去快走 20 分鐘，不用去健身房也算。',ev:R(SRC.mood)},
-    r_low_home:{v:'stretch',line:'在家伸展或跟著影片動 15 分鐘；先拉開窗簾、把燈打開。',ev:R(SRC.mood)},
-    r_anx:{v:'easy',line:'快走、飛輪或慢跑 20–30 分鐘，節奏穩定的最好；今天不挑戰新重量。',ev:R(SRC.anx)},
-    r_angry:{v:'go',line:'用熟悉的動作和平常的重量，配節奏快的音樂；今天不破紀錄。',ev:T('生氣時注意力比較差，挑熟悉的動作比較安全')},
+    q9:{q:'願意走過去，做 20–30 分鐘輕鬆的嗎？',o:[['好吧，走過去而已','','r_easy20'],['連走過去都不想','','q10']]},
+    q10:{q:`這週已經摘到一半以上的水果了嗎？`,sub:`現在 ${n}/${GOAL} 顆`,o:[['有，我很棒','','r_earned'],['還沒……','','r_tomorrow']]},
+    t_hungry:{tip:'先吃根香蕉或一片吐司，30 分鐘後出門。牛留到練完再吃。',ev:R(SRC.snack),to:'q7'},
+    t_full:{tip:'先散步一下，或等 1 小時。現在去深蹲，晚餐可能會想出來打招呼。',ev:T('剛吃飽就激烈運動容易肚子不舒服'),to:'q7'},
+    t_late:{tip:'中等強度就好，別練到上氣不接下氣，不然等一下會躺在床上細數人生錯誤。',ev:R(SRC.night),to:'q8'},
+    r_fever:{v:'rest',line:'去躺好，你今天的教練是棉被。',ev:R(SRC.neck)},
+    r_cold_light:{v:'easy',line:'散步、伸展，強度砍半。鼻涕擦乾就出發，越練越慘就收工。',ev:R(SRC.neck)},
+    r_cold_rest:{v:'rest',line:'白血球在前線打仗，你就別再派它出差了。',ev:R(SRC.neck)},
+    r_injury:{v:'rest',line:'冰敷、休息，痛超過 3 天就去給醫生看看。',ev:T('會讓動作變形、固定一點的尖銳疼痛，通常是受傷訊號，不是一般痠痛')},
+    r_swap:{v:'swap',line:`哪裡痛就放它一馬，今天改練${part}，或做不會用到那裡的有氧。`,ev:T('局部不舒服時，換練其他部位是常見做法')},
+    r_doms:{v:'go',line:`這是上次努力的勳章。練別的部位（例如${part}），動一動反而好得快。`,ev:T('延遲性肌肉痠痛通常 1–3 天會退，輕度活動有助恢復')},
+    r_overtrain:{v:'rest',line:'身體在寫投訴信了，這幾天散步就好。',ev:T('教練常用的過度訓練訊號：痠痛超過 3–4 天、輕鬆的課表也變得很吃力')},
+    r_sleep:{v:'rest',line:'肌肉是在睡覺時長的，今天去「睡」出肌肉。',ev:R(SRC.sleep)},
+    r_sleep_light:{v:'easy',line:'今天不碰新重量，熟悉的動作輕輕做就好。',ev:R(SRC.sleep)},
+    r_period_rest:{v:'rest',line:'熱敷、溫水、好好過冬。',ev:T('痛到需要止痛藥時，先讓身體休息')},
+    r_period_light:{v:'peach',line:'20 分鐘瑜珈或輕重量，舒服就好，不用證明什麼。',ev:R(SRC.period)},
+    r_morning:{v:'morning',line:'好，現在就把運動服放床邊。明天的你，靠你了。',ev:T('先把明天要用的東西準備好，比較容易真的做到')},
+    r_stretch_night:{v:'stretch',line:'誠實是美德。現在伸展 15 分鐘，然後去睡，睡前輕鬆動一動反而好睡。',ev:R(SRC.night)},
+    r_brain:{v:'go',line:'你的腦袋又在播恐怖片預告了，正片通常是喜劇。',ev:R(SRC.brain)},
+    r_nobrain:{v:'go',line:`今天不用動腦，照抄就好：熱身 → ${part}的前兩個動作${first} → 收操，30 分鐘下課。`,ev:R(SRC.mental)},
+    r_low_walk:{v:'easy',line:'出去走 20 分鐘就好，不用去健身房也算。',ev:R(SRC.mood)},
+    r_low_home:{v:'stretch',line:'在家伸展或跟著影片動 15 分鐘，先拉開窗簾、開個燈。',ev:R(SRC.mood)},
+    r_anx:{v:'easy',line:'快走、飛輪或慢跑 20–30 分鐘，讓腳步幫腦袋踩一下煞車。',ev:R(SRC.anx)},
+    r_angry:{v:'go',line:'把火氣交給槓鈴，但用平常的重量就好。今天的對手是情緒，不是紀錄。',ev:T('生氣時注意力比較差，挑熟悉的動作比較安全')},
     r_burn_rest:{v:'rest',line:'今天選真正能充電的事，睡覺、跟朋友聊天都好。如果一直沒好轉，找信任的人或專業的人聊聊。',ev:T('長期的壓力需要的不只是運動')},
-    r_burn_choose:{v:'choose',line:'散步 20 分鐘透透氣，或好好休息，兩個都算照顧自己。',ev:T('心很累的時候，選讓你覺得被照顧的那個')},
-    r_sad:{v:'rest',line:'今天先照顧心情。想動的話，散步 20 分鐘就好，不用打卡也沒關係。',ev:T('難過的時候，休息本身就是在照顧自己')},
-    r_easy20:{v:'easy',line:'快走、輕踩飛輪或伸展 20–30 分鐘就好。',ev:R(SRC.tired)},
-    r_earned:{v:'rest',line:'這週已經很努力了，好好休息。',ev:T('休息日也是訓練的一部分')},
-    r_tomorrow:{v:'rest',line:'今天休息，明天把運動排在第一件事。',ev:T('累到不想動的日子，好好睡一覺通常比硬撐更划算')}};
+    r_burn_choose:{v:'choose',line:'散步透透氣，或好好休息，兩個都算照顧自己。',ev:T('心很累的時候，選讓你覺得被照顧的那個')},
+    r_sad:{v:'rest',line:'今天先照顧心情。想動的話，散步 20 分鐘就好，不打卡也沒關係。',ev:T('難過的時候，休息本身就是在照顧自己')},
+    r_easy20:{v:'easy',line:'就當去散步，順便流個汗。',ev:R(SRC.tired)},
+    r_earned:{v:'rest',line:'這週已經很努力了，今天准你放假。',ev:T('休息日也是訓練的一部分')},
+    r_tomorrow:{v:'rest',line:'今天先休息，明天把運動排在第一件事，水果不會跑掉的。',ev:T('累到不想動的日子，好好睡一覺通常比硬撐更划算')}};
 }
 const evHTML=e=>e?`<p class="ev ${e.k}">${e.k==='r'?'📚 研究指出：':'💡 一般建議：'}${e.t}</p>`:'';
 let deckPath=[], deckDir='';
@@ -1292,8 +1292,8 @@ function renderDeck(){
   const N=deckNodes(), id=deckPath[deckPath.length-1], node=N[id], qn=deckPath.filter(x=>x.startsWith('q')).length, isEnd=id.startsWith('r_');
   const top=`<div class="deck-top">${deckPath.length>1&&!isEnd?'<button class="back" data-act="dback">← 上一題</button>':'<span></span>'}<button class="xbtn" data-act="dclose" aria-label="關閉">✕</button></div>`;
   let card;
-  if(node.intro) card=`<div class="emo" aria-hidden="true">🤨</div><h3>嗯？你確定嗎？</h3><p>先別急著躺平。回答幾個問題，讓水果籃幫你判斷今天該去還是該休息。</p>
-    <div class="answers"><button class="pri" data-act="dnext" data-to="q1">好，問吧</button></div>`;
+  if(node.intro) card=`<div class="emo" aria-hidden="true">🤨</div><h3>喔？又來了？</h3><p>先別急著躺平。讓水果籃當一次你的判官，回答幾題就放你走。</p>
+    <div class="answers"><button class="pri" data-act="dnext" data-to="q1">好啦，問吧</button></div>`;
   else if(node.q) card=`<div class="emo" aria-hidden="true">🤔</div><span class="qno">第 ${qn} 題</span><h3>${node.q}</h3>${node.sub?`<p>${node.sub}</p>`:''}
     <div class="answers">${node.o.map(([t,ex,to])=>`<button data-act="dnext" data-to="${to}">${t}${ex?`<small>${ex}</small>`:''}</button>`).join('')}</div>`;
   else if(node.tip) card=`<div class="emo" aria-hidden="true">💡</div><h3>${node.tip}</h3>${evHTML(node.ev)}
@@ -1307,7 +1307,7 @@ function drumroll(node){
   words.forEach((w,i)=>setTimeout(()=>{if($('#deck').hidden)return;drum.insertAdjacentHTML('beforeend',`<span>${w}</span>`);if(soundOn){tone(98,0,.22,'triangle',.3,60);tone(196,0,.08,'square',.04)}},i*420));
   setTimeout(()=>{if($('#deck').hidden)return;const v=$('#verdict');v.hidden=false;
     v.innerHTML=`<div class="emo" aria-hidden="true">${emo}</div><h3 class="verdict${go?'':' rest'}">${title}</h3><p>${node.line}</p>${evHTML(node.ev)}
-      <div class="answers">${go?'<button class="pri" data-act="dgo">好啦我去</button>':'<button class="pri" data-act="dclose">好，聽你的</button>'}<button data-act="dagain">重來一次</button></div>`;
+      <div class="answers">${go?'<button class="pri" data-act="dgo">好啦好啦我去</button>':'<button class="pri" data-act="dclose">謝主隆恩</button>'}<button data-act="dagain">重來一次</button></div>`;
     v.style.cssText='display:flex;flex-direction:column;align-items:center;gap:14px;width:100%';
     if(node.v==='go'){rain(['grape','berry','melon','peach','banana','cherry'],26);if(soundOn)SFX.full()}
     else if(go){const [cx,cy]=centerOf($('#verdict .emo'));burst(cx,cy,['grape','berry','#FFD54A','#7FD39A'],12,140);if(soundOn)SFX.stamp()}

@@ -427,7 +427,8 @@ details.menu summary span{font-size:12px;color:var(--muted)}
   <section class="cycle" id="cycle" aria-label="月經週期"></section>
 
   <section class="sec">
-    <h2>預估 vs 實際 <span>這週的平均</span></h2>
+    <h2 id="statsTitle">預估 vs 實際 <span>這週的平均</span></h2>
+    <p class="tip" id="statsWhy"></p>
     <div class="stats" id="stats"></div>
   </section>
 
@@ -483,10 +484,12 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2234';
+const APP_VERSION='2026.10.24-2237';
 /* every person sets their own week: which lift days, how many cardio sessions, cycle on/off */
 const LIFT_SLOTS=[{k:'back',def:'背',fruit:'grape'},{k:'chest',def:'胸',fruit:'berry'},{k:'legs',def:'腿',fruit:'melon'}];
-const DEFAULT_SET={parts:{back:{on:true,name:'背'},chest:{on:true,name:'胸'},legs:{on:true,name:'腿'}},cardio:3,cycle:true};
+const DEFAULT_SET={parts:{back:{on:true,name:'背'},chest:{on:true,name:'胸'},legs:{on:true,name:'腿'}},cardio:3,cycle:true,pain:true};
+/* why the pain scores exist, shown wherever they appear */
+const PAIN_WHY='大腦常高估運動有多累（Ruby 等人，2011），出門前先猜、練完再打分，就知道腦袋多想了幾分。';
 let SET=JSON.parse(JSON.stringify(DEFAULT_SET)), PARTS=[], LIFT_GOAL=3, GOAL=6;
 function applySettings(){
   PARTS=LIFT_SLOTS.filter(x=>SET.parts[x.k]?.on).map(x=>({k:x.k,n:(SET.parts[x.k].name||x.def).trim()||x.def,sub:'每組留 2–3 下就收',fruit:x.fruit}));
@@ -737,7 +740,9 @@ function goalBody(){
     <section class="stage"><h4>有氧</h4><div class="goalrow">${icon('banana')}<div><b>每週幾次有氧</b><small>跑步、爬坡、飛輪、快走都算</small></div>
       <div class="cnt"><button data-act="scardio" data-d="-1" aria-label="少一次">−</button><output>${d.cardio}</output><button data-act="scardio" data-d="1" aria-label="多一次">＋</button></div></div></section>
     <section class="stage"><h4>其他</h4><div class="goalrow">${icon('peach')}<div><b>月經週期</b><small>記錄月經，自動推算四季；經期可以選🍑練輕的</small></div>
-      <button class="sw" role="switch" aria-checked="${d.cycle}" data-act="stog" data-k="cycle" aria-label="月經週期功能"></button></div></section>
+      <button class="sw" role="switch" aria-checked="${d.cycle}" data-act="stog" data-k="cycle" aria-label="月經週期功能"></button></div>
+      <div class="goalrow">${icon('berry')}<div><b>出門前後痛苦紀錄</b><small>${PAIN_WHY}</small></div>
+      <button class="sw" role="switch" aria-checked="${d.pain}" data-act="stog" data-k="pain" aria-label="出門前後痛苦紀錄"></button></div></section>
     <p class="goalsum">每週目標 <b>${total}</b> 次<br><small class="tip">重訓 ${lifts} 次＋有氧 ${d.cardio} 次；額外運動也能抵</small></p>`;
 }
 function renderSetup(){
@@ -759,7 +764,7 @@ function renderSetup(){
 }
 function saveGoal(firstRun){
   const d=sdraft; LIFT_SLOTS.forEach(x=>{d.parts[x.k].name=(d.parts[x.k].name||'').trim()||x.def});
-  SET={parts:d.parts,cardio:d.cardio,cycle:d.cycle}; local.set('settings',SET); applySettings();
+  SET={parts:d.parts,cardio:d.cardio,cycle:d.cycle,pain:d.pain}; local.set('settings',SET); applySettings();
   if(firstRun){menus=d.menu==='blank'?{back:[],chest:[],legs:[],period:[]}:JSON.parse(JSON.stringify(TEMPLATE_MENUS));local.set('menus',menus);mdraft=null;
     week=normalize(null);fillEmptyLifts()}
   else{week=normalize(week);fillEmptyLifts()}
@@ -777,19 +782,20 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet)closeSheet();
   if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('#gecko [role=button]')){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
 const chk=(on,attrs,title,sub)=>`<li class="item wc${on?' ok':''}"><div class="irow"><button class="check" ${attrs} aria-pressed="${on}" aria-label="完成${title}">${on?'✓':''}</button>
   <div class="nm"><b>${title}</b><span>${sub}</span></div><span></span></div></li>`;
+const painPre=(s,label,why)=>SET.pain?stepper('pre',label,s.pre)+(why?`<p class="tip">${PAIN_WHY}</p>`:''):'';
 function stageGo(s){
   let inner;
   if(s.done){
     const t=[];if(s.planAt)t.push(`${hm(s.planAt)} 打算去`);if(s.departAt)t.push(`${hm(s.departAt)} 出門`);
-    inner=`<p class="timeline">${t.length?t.join(' → '):'這次沒有記出門時間'}${s.planAt&&s.departAt?` · 拖了 <b>${dur(mins(s.planAt,s.departAt))}</b>`:''}</p>${stepper('pre','出門前預估痛苦',s.pre)}`;
+    inner=`<p class="timeline">${t.length?t.join(' → '):'這次沒有記出門時間'}${s.planAt&&s.departAt?` · 拖了 <b>${dur(mins(s.planAt,s.departAt))}</b>`:''}</p>${painPre(s,'出門前預估痛苦')}`;
   }else if(s.departAt){
-    inner=`<p class="timeline"><b>${hm(s.departAt)} 出門了</b>${s.planAt?` · 從打算到出門 ${dur(mins(s.planAt,s.departAt))}`:''}</p>${stepper('pre','出門前預估痛苦',s.pre)}
+    inner=`<p class="timeline"><b>${hm(s.departAt)} 出門了</b>${s.planAt?` · 從打算到出門 ${dur(mins(s.planAt,s.departAt))}`:''}</p>${painPre(s,'出門前預估痛苦')}
       <button class="ghost" data-act="undepart">按錯了，還沒出門</button>`;
   }else if(s.planAt){
-    inner=`<p class="timeline"><b>${hm(s.planAt)} 打算去</b> · 到現在 ${dur(mins(s.planAt,new Date().toISOString()))}</p>${stepper('pre','想到要去，覺得會多痛苦？',s.pre)}
+    inner=`<p class="timeline"><b>${hm(s.planAt)} 打算去</b> · 到現在 ${dur(mins(s.planAt,new Date().toISOString()))}</p>${painPre(s,'想到要去，覺得會多痛苦？',true)}
       <button class="go-btn" data-act="depart">出門了！</button><button class="ghost" data-act="unplan">今天先不去了</button>`;
   }else{
-    inner=`<p class="timeline">決定要去的時候先按「今天打算去」，出門時再按一次，app 會算出拖了多久。</p>${stepper('pre','想到要去，覺得會多痛苦？',s.pre)}
+    inner=`<p class="timeline">決定要去的時候先按「今天打算去」，出門時再按一次，app 會算出拖了多久。</p>${painPre(s,'想到要去，覺得會多痛苦？',true)}
       <div class="btnrow"><button class="ghost" data-act="plan">今天打算去</button><button class="go-btn" style="padding:10px;font-size:15px" data-act="depart">已經出門了</button></div>
       <p class="tip">很抗拒的話：熱身完做第一個動作，就可以打卡。</p>`;
   }
@@ -834,7 +840,7 @@ function stageDo(s){
 }
 function stageEnd(s){
   const day=s.done?(keyOfMD(s.date)||pickDay):pickDay;
-  return `<section class="stage"><h4><i>3</i>練完</h4>${stepper('post','實際有多痛苦？',s.post)}${datePicker(day)}
+  return `<section class="stage"><h4><i>3</i>練完</h4>${SET.pain?stepper('post','實際有多痛苦？',s.post):''}${datePicker(day)}
     <button class="stamp-btn${s.done?' undo':(!s.departAt&&sheet.t!=='extra'?' quiet':'')}" data-act="done">${s.done?'取消打卡':'打卡！'}</button></section>`;
 }
 function renderSheet(){
@@ -882,8 +888,10 @@ const gap=(pre,post)=>pre.length&&post.length?(()=>{const d=(avg(pre)-avg(post))
 const lagTxt=a=>a.length?dur(Math.round(a.reduce((x,y)=>x+y,0)/a.length)):'–';
 function renderStats(){
   const pre=[],post=[],lag=[]; collect(week||blankWeek(),pre,post,lag);
-  $('#stats').innerHTML=`<div class="stat"><span>出門前預估</span><b>${avg(pre)}</b></div><div class="stat"><span>練完實際</span><b>${avg(post)}</b></div>
-    <div class="stat"><span>腦袋多想了</span><b>${gap(pre,post)}</b></div><div class="stat"><span>平均拖了</span><b style="font-size:18px">${lagTxt(lag)}</b></div>`;
+  $('#statsTitle').innerHTML=SET.pain?'預估 vs 實際 <span>這週的平均</span>':'出門紀錄 <span>這週的平均</span>';
+  $('#statsWhy').textContent=SET.pain?PAIN_WHY:'';$('#statsWhy').hidden=!SET.pain;
+  $('#stats').innerHTML=(SET.pain?`<div class="stat"><span>出門前預估</span><b>${avg(pre)}</b></div><div class="stat"><span>練完實際</span><b>${avg(post)}</b></div>
+    <div class="stat"><span>腦袋多想了</span><b>${gap(pre,post)}</b></div>`:'')+`<div class="stat"><span>平均拖了</span><b style="font-size:18px">${lagTxt(lag)}</b></div>`;
 }
 function renderMenu(){
   if(!mdraft){mdraft={};PARTS.forEach(p=>mdraft[p.k]=(menus?.[p.k]||[]).map(normItem))}
@@ -925,7 +933,7 @@ document.addEventListener('click',e=>{
   if(act==='jarmonth'||act==='jargo'){mcur=new Date(+b.dataset.y,+b.dataset.m,1);if(act==='jargo'){const n=new Date(),p=new Date(n.getFullYear(),n.getMonth()-1,1);local.set('jarSeen',`${p.getFullYear()}-${p.getMonth()+1}`);play('jam')}setView('month');renderNudge();window.scrollTo(0,0);return}
   if(act==='jarlater'){const n=new Date(),p=new Date(n.getFullYear(),n.getMonth()-1,1);local.set('jarSeen',`${p.getFullYear()}-${p.getMonth()+1}`);renderNudge();return}
   if(act==='opensettings'){sdraft=JSON.parse(JSON.stringify(SET));openSheet({t:'goal'});return}
-  if(act==='stog'){const k=b.dataset.k;if(k==='cycle')sdraft.cycle=!sdraft.cycle;else sdraft.parts[k].on=!sdraft.parts[k].on;renderSheet();return}
+  if(act==='stog'){const k=b.dataset.k;if(k==='cycle')sdraft.cycle=!sdraft.cycle;else if(k==='pain')sdraft.pain=!sdraft.pain;else sdraft.parts[k].on=!sdraft.parts[k].on;renderSheet();return}
   if(act==='scardio'){sdraft.cardio=Math.max(0,Math.min(7,sdraft.cardio+(+b.dataset.d)));renderSheet();return}
   if(act==='smenu'){sdraft.menu=b.dataset.v;renderSheet();return}
   if(act==='snext'){if(sheet.step===2&&!LIFT_SLOTS.some(x=>sdraft.parts[x.k].on)&&!sdraft.cardio){toast('至少選一個部位或一次有氧');return}sheet.step++;renderSheet();$('#sheetBody').scrollTop=0;return}
@@ -1058,7 +1066,7 @@ function renderMonth(){
   renderShelf();
   $('#mlegend').innerHTML=[...PARTS.map(p=>`<span>${icon(p.fruit)}${p.n}</span>`),SET.cardio?`<span>${icon('banana')}有氧</span>`:'',`<span>${icon('cherry')}額外</span>`].join('')+(SET.cycle?Object.entries(SEASONS).map(([k,v])=>`<span><i style="display:inline-block;width:12px;height:3px;border-radius:2px;background:var(--${k})"></i>${v.n}</span>`).join(''):'');
   $('#mstats').innerHTML=`<div class="stat"><span>重訓</span><b>${lifts}</b></div><div class="stat"><span>有氧</span><b>${climbs}</b></div><div class="stat"><span>額外</span><b>${extras}</b></div><div class="stat"><span>全滿的週</span><b>${full}</b></div>
-    <div class="stat"><span>預估痛苦</span><b>${avg(pre)}</b></div><div class="stat"><span>實際痛苦</span><b>${avg(post)}</b></div><div class="stat"><span>多想了</span><b>${gap(pre,post)}</b></div><div class="stat"><span>平均拖了</span><b style="font-size:15px">${lagTxt(lag)}</b></div>`;
+    ${SET.pain?`<div class="stat"><span>預估痛苦</span><b>${avg(pre)}</b></div><div class="stat"><span>實際痛苦</span><b>${avg(post)}</b></div><div class="stat"><span>多想了</span><b>${gap(pre,post)}</b></div>`:''}<div class="stat"><span>平均拖了</span><b style="font-size:15px">${lagTxt(lag)}</b></div>`;
 }
 function setView(v){view=v;$('#weekView').hidden=v!=='week';$('#monthView').hidden=v!=='month';
   $('#tabWeek').setAttribute('aria-selected',v==='week');$('#tabMonth').setAttribute('aria-selected',v==='month');
@@ -1200,7 +1208,7 @@ render();
   menus=local.get('menus')||(returning?STARTER_MENUS:TEMPLATE_MENUS); if(!menus.period)menus.period=STARTER_MENUS.period;
   cycle=local.get('cycle')||{periods:[]};
   loadWeek();
-  if(!saved&&!returning){sdraft=Object.assign(JSON.parse(JSON.stringify(DEFAULT_SET)),{menu:'template'});openSheet({t:'setup',step:1})}
+  if(!saved&&!returning){sdraft=Object.assign(JSON.parse(JSON.stringify(DEFAULT_SET)),{menu:'template',pain:false});openSheet({t:'setup',step:1})}
 })();
 </script>
 </body>

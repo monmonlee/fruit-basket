@@ -257,9 +257,9 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 .answers button.pri{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
 .emo{font-size:96px;line-height:1.1;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
 .answers button small{display:block;font-size:13px;color:var(--muted);margin-top:2px}
-.ev{font-size:13px;line-height:1.5;padding:8px 12px;border-radius:12px;text-align:left;max-width:34ch;margin:0}
-.ev.r{background:var(--primary-soft);color:var(--ink)}
-.ev.t{background:var(--card);border:1px dashed var(--line);color:var(--muted)}
+.evi{font-size:13px;line-height:1.5;padding:8px 12px;border-radius:12px;text-align:left;max-width:34ch;margin:0}
+.evi.r{background:var(--primary-soft);color:var(--ink)}
+.evi.t{background:var(--card);border:1px dashed var(--line);color:var(--muted)}
 .drum{font-size:34px;letter-spacing:.1em;min-height:1.4em}
 .drum span{display:inline-block;animation:dum .35s ease both}
 @keyframes dum{0%{transform:scale(2.2);opacity:0}60%{transform:scale(.9);opacity:1}100%{transform:none}}
@@ -286,13 +286,13 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 .dow{font-size:12px;color:var(--muted);text-align:center;margin-bottom:6px}
 .dow::after{content:""}
 .grid{display:flex;flex-direction:column;gap:4px}
-.day{aspect-ratio:1;max-width:100%;border-radius:12px;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:4px;gap:2px;min-width:0}
+.day{position:relative;aspect-ratio:1;max-width:100%;border-radius:12px;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:3px;gap:1px;min-width:0;overflow:hidden}
 .day.out{opacity:.35}
 .day.today{outline:2px solid var(--primary);outline-offset:-2px}
-.day .dn{font-family:var(--num);font-size:13px;font-weight:500;line-height:1.2;font-variant-numeric:tabular-nums}
+.day .dn{font-family:var(--num);font-size:12px;font-weight:500;line-height:1.2;font-variant-numeric:tabular-nums}
 .day .ev{display:flex;flex-wrap:wrap;justify-content:center;gap:2px}
 .day .ev{gap:0;flex-wrap:nowrap;align-items:center;max-width:100%}
-.day .ev svg{width:15px;height:15px;flex:none}
+.day .ev svg{width:14px;height:14px;flex:none}
 .day .ev svg+svg{margin-left:-6px}
 .day .ev .more{font-family:var(--num);font-size:11px;font-weight:600;color:var(--muted);margin-left:1px}
 .wsum{display:grid;place-items:center;font-family:var(--num);font-weight:600;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -383,7 +383,8 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 .prow input{width:100%;min-width:0;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:6px 6px;font-size:13px}
 .prow button{height:34px;border-radius:10px;background:var(--card);border:1px solid var(--line);color:var(--warn)}
 .day.s-winter{background:var(--winter-soft)}
-.day .sbar{width:60%;height:3px;border-radius:2px;margin-top:auto;margin-bottom:4px}
+/* season bar sits on the bottom edge so it never pushes the fruit down on narrow phones */
+.day .sbar{position:absolute;left:20%;right:20%;bottom:3px;height:3px;border-radius:2px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:99px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 </style>
 </head>
@@ -523,7 +524,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2319';
+const APP_VERSION='2026.10.24-2331';
 /* every person sets their own week: which lift days, how many cardio sessions, cycle on/off */
 const LIFT_SLOTS=[{k:'back',def:'背',fruit:'grape'},{k:'chest',def:'胸',fruit:'berry'},{k:'legs',def:'腿',fruit:'melon'}];
 const DEFAULT_SET={parts:{back:{on:true,name:'背'},chest:{on:true,name:'胸'},legs:{on:true,name:'腿'}},cardio:3,cycle:true,pain:true};
@@ -1289,7 +1290,7 @@ function deckNodes(){
     r_earned:{v:'rest',line:'這週已經很努力了，今天准你放假。',ev:T('休息日也是訓練的一部分')},
     r_tomorrow:{v:'rest',line:'今天先休息，明天把運動排在第一件事，水果不會跑掉的。',ev:T('累到不想動的日子，好好睡一覺通常比硬撐更划算')}};
 }
-const evHTML=e=>e?`<p class="ev ${e.k}">${e.k==='r'?'📚 研究指出：':'💡 一般建議：'}${e.t}</p>`:'';
+const evHTML=e=>e?`<p class="evi ${e.k}">${e.k==='r'?'📚 研究指出：':'💡 一般建議：'}${e.t}</p>`:'';
 let deckPath=[], deckDir='';
 function openDeck(){deckPath=['start'];deckDir='';$('#deck').hidden=false;document.documentElement.style.overflow='hidden';renderDeck()}
 function closeDeck(){$('#deck').hidden=true;document.documentElement.style.overflow=''}

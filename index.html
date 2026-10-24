@@ -260,6 +260,18 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 .setedit .acts .danger{color:var(--warn)}
 .ripe-btn{padding:11px;border-radius:12px;background:var(--lilac);color:#fff;font-size:15px}
 .ripe-btn.undo{background:var(--card);color:var(--muted)}
+/* which day a session counts for */
+.dpick{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.dpick > span{font-size:13px;color:var(--muted);margin-right:2px}
+.dpick button{padding:6px 12px;border-radius:99px;background:var(--bg);font-size:14px}
+.dpick button[aria-pressed="true"]{background:var(--lilac);color:#fff}
+.dpick input{border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:5px 10px;font-size:14px;min-width:0}
+.dpick input.on{border-color:var(--lilac);background:var(--lilac-soft)}
+/* backup nudge */
+.nudge{background:var(--card);border:1.5px dashed var(--summer);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.nudge p{margin:0;font-size:14px}
+.nudge .btnrow button{padding:9px;border-radius:12px;font-size:14px;background:var(--bg)}
+.nudge .btnrow .main{background:var(--summer);color:#fff}
 /* extras */
 .xlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .xitem{display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;background:var(--bg);border-radius:14px;padding:8px 10px}
@@ -352,6 +364,8 @@ details.menu summary span{font-size:12px;color:var(--muted)}
     <div class="bubble" id="bubble">新的一週，去玩吧</div>
   </section>
 
+  <div id="nudge"></div>
+
   <section class="cycle" id="cycle" aria-label="月經週期"></section>
 
   <section class="sec">
@@ -395,7 +409,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2157';
+const APP_VERSION='2026.10.24-2203';
 const PARTS=[{k:'back',n:'背',sub:'背日',fruit:'grape',fn:'葡萄'},{k:'chest',n:'胸',sub:'胸・肩・三頭',fruit:'berry',fn:'草莓'},{k:'legs',n:'腿',sub:'腿日',fruit:'melon',fn:'西瓜'},{k:'period',n:'經期',sub:'輕重量，想練哪裡就練哪裡',fruit:'peach',fn:'桃子'}];
 /* fruits drawn in a 40×40 box centred on 0,0 */
 function fruit(t){
@@ -581,6 +595,21 @@ const hm=iso=>{const d=new Date(iso);return `${pad(d.getHours())}:${pad(d.getMin
 const mins=(a,b)=>Math.max(0,Math.round((new Date(b)-new Date(a))/60000));
 const dur=m=>m>=60?`${Math.floor(m/60)} 小時${m%60?` ${m%60} 分`:''}`:`${m} 分鐘`;
 const isThisWeek=()=>wk===keyOf(monday(new Date()));
+/* a session's day must fall inside the week on screen and not in the future */
+const addDays=(k,n)=>{const d=parseKey(k);d.setDate(d.getDate()+n);return keyOf(d)};
+function dayBounds(){const lo=wk,hi=[addDays(wk,6),keyOf(new Date())].sort()[0];return{lo,hi:hi<lo?lo:hi}}
+function defaultDay(){const {lo,hi}=dayBounds(),t=keyOf(new Date());return t>=lo&&t<=hi?t:hi}
+function keyOfMD(m){for(let i=0;i<7;i++){const k=addDays(wk,i);if(md(parseKey(k))===m)return k}return null}
+let pickDay=null;
+function datePicker(cur){
+  const {lo,hi}=dayBounds(), t=keyOf(new Date()), y=addDays(t,-1), inW=k=>k>=lo&&k<=hi;
+  const chip=(k,n)=>inW(k)?`<button data-act="dchip" data-k="${k}" aria-pressed="${cur===k}">${n}</button>`:'';
+  return `<div class="dpick"><span>算在哪天</span>${chip(t,'今天')}${chip(y,'昨天')}
+    <input type="date" id="dpick" aria-label="選日期" min="${lo}" max="${hi}" value="${cur}" class="${cur!==t&&cur!==y?'on':''}"></div>`;
+}
+function setDay(k){const {lo,hi}=dayBounds();if(!k||k<lo||k>hi){toast('只能選這一週、而且不晚於今天的日期');renderSheet();return}
+  const s=cur();if(s&&s.done){s.date=md(parseKey(k));render();queueSave()}else{pickDay=k;renderSheet()}}
+document.addEventListener('change',e=>{if(e.target.id==='dpick')setDay(e.target.value)});
 
 function liftOrder(){const ph=isThisWeek()?phaseOn(new Date()):null;return ph&&ph.season==='winter'?[PARTS[3],...PARTS.slice(0,3)]:PARTS}
 function status(s){return s.done?['done','✓ '+s.date]:s.departAt?['going','出門中']:s.planAt?['going','打算去']:['','']}
@@ -589,7 +618,7 @@ function status(s){return s.done?['done','✓ '+s.date]:s.departAt?['going','出
 let sheet=null;   // {t:'lift',k} | {t:'climb',i} | {t:'extra'}
 const CLIMB_STEPS=[['warm','暖身','慢走或輕鬆動 5 分鐘'],['main','有氧 30 分鐘','前 5–10 分鐘放慢，維持在能講話的速度'],['cool','收操','慢走＋伸展練到的部位']];
 function cur(){if(!week||!sheet)return null;return sheet.t==='lift'?week.lifts[sheet.k]:sheet.t==='climb'?week.climbs[sheet.i]:null}
-function openSheet(s){sheet=s;sel=null;xdraft=s.t==='extra'?{type:'爬山',min:'',note:''}:null;
+function openSheet(s){sheet=s;sel=null;pickDay=defaultDay();xdraft=s.t==='extra'?{type:'爬山',min:'',note:''}:null;
   $('#sheet').hidden=false;document.documentElement.style.overflow='hidden';renderSheet();$('#sheetBody').scrollTop=0;setTimeout(()=>$('#sheetClose')?.focus(),60)}
 function closeSheet(){sheet=null;xdraft=null;$('#sheet').hidden=true;document.documentElement.style.overflow=''}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet)closeSheet();
@@ -651,7 +680,8 @@ function stageDo(s){
   return `<section class="stage${s.departAt&&!s.done?' cur':''}"><h4><i>2</i>${sheet.t==='lift'?`今天的${GARDEN[sheet.k].n}<span class="tip" style="margin-left:auto">點果實改那一組</span>`:'有氧'}</h4>${list}</section>`;
 }
 function stageEnd(s){
-  return `<section class="stage"><h4><i>3</i>練完</h4>${stepper('post','實際有多痛苦？',s.post)}
+  const day=s.done?(keyOfMD(s.date)||pickDay):pickDay;
+  return `<section class="stage"><h4><i>3</i>練完</h4>${stepper('post','實際有多痛苦？',s.post)}${datePicker(day)}
     <button class="stamp-btn${s.done?' undo':''}" data-act="done">${s.done?'取消打卡':'打卡！'}</button></section>`;
 }
 function renderSheet(){
@@ -667,6 +697,7 @@ function renderSheet(){
       ${other?`<div class="fld"><label for="xcustom">運動名稱</label><input id="xcustom" data-x="type" value="${esc(xdraft.type==='其他'?'':xdraft.type)}" placeholder="例：騎腳踏車"></div>`:''}
       <div class="two"><div class="fld"><label for="xmin">分鐘</label><input id="xmin" data-x="min" value="${esc(xdraft.min)}" inputmode="numeric" placeholder="60"></div>
       <div class="fld"><label for="xnote">一句話備註</label><input id="xnote" data-x="note" value="${esc(xdraft.note)}" placeholder="例：和朋友爬七星山"></div></div>
+      ${datePicker(pickDay)}
       <button class="stamp-btn" data-act="xsave">記下來</button></section>`;
   }else{
     const s=cur();
@@ -704,7 +735,16 @@ function renderMenu(){
 }
 const XTYPES=['爬山','游泳','跑步','瑜珈','球類','其他'];
 let xdraft=null;
-function render(){renderNav();renderCycle();renderHero();renderStats();renderMenu();renderSheet();
+/* nudge after 14 days without a backup (3 days of use if never backed up) */
+function renderNudge(){
+  const now=Date.now(), D=864e5, last=local.get('lastBackup'), first=local.get('firstUse')||now, snooze=local.get('backupSnooze')||0;
+  const hasData=Object.values(allWeeks).some(w=>w&&(Object.values(w.lifts||{}).some(l=>l&&l.done)||(w.climbs||[]).some(c=>c&&c.done)||(w.extras||[]).length));
+  const days=last?Math.floor((now-last)/D):null;
+  const show=hasData&&now>snooze&&(last?days>=14:now-first>=3*D);
+  $('#nudge').innerHTML=show?`<div class="nudge"><p>${last?`上次備份是 <b>${days} 天前</b>。`:'還沒有備份過。'}紀錄只存在這支手機裡，備份一下比較安心。</p>
+    <div class="btnrow"><button data-act="snooze">之後再說</button><button class="main" data-act="backupNow">現在備份</button></div></div>`:'';
+}
+function render(){renderNav();renderNudge();renderCycle();renderHero();renderStats();renderMenu();renderSheet();
   $('#note').textContent='資料存在這支手機的瀏覽器裡，從主畫面圖示打開才會是同一份。'}
 
 /* ---------- events ---------- */
@@ -712,6 +752,8 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]'); if(!b) return;
   const act=b.dataset.act, i=+b.dataset.i;
   if(act==='close'){closeSheet();return}
+  if(act==='backupNow'){$('#exportBtn').click();return}
+  if(act==='snooze'){local.set('backupSnooze',Date.now()+3*864e5);renderNudge();return}
   if(act==='mtab'){mtab=b.dataset.p;renderMenu();return}
   if(act==='mdel'){mdraft[mtab].splice(i,1);renderMenu();return}
   if(act==='pstart'){const k=keyOf(new Date());if(!cycle.periods.some(x=>x.start===k))cycle.periods.push({start:k,end:null});saveCycle();toast('記下了，這幾天對自己好一點');render();return}
@@ -725,7 +767,8 @@ document.addEventListener('click',e=>{
     else if(v==='climb'){const c=week.climbs;let n=c.findIndex(x=>!x.done&&(x.planAt||x.departAt));if(n<0)n=c.findIndex(x=>!x.done);openSheet({t:'climb',i:n<0?0:n})}
     else openSheet({t:'extra'});
     return}
-  if(act==='ctab'){sheet.i=i;sel=null;renderSheet();$('#sheetBody').scrollTop=0;return}
+  if(act==='dchip'){setDay(b.dataset.k);return}
+  if(act==='ctab'){sheet.i=i;sel=null;pickDay=defaultDay();renderSheet();$('#sheetBody').scrollTop=0;return}
   if(act==='pick'){const j=+b.dataset.j;sel=sel&&sel.i===i&&sel.j===j?null:{i,j};renderSheet();return}
   if(act==='unpick'){sel=null;renderSheet();return}
   if(act==='xtype'){xdraft.type=b.dataset.t;renderSheet();if(b.dataset.t==='其他')$('#xcustom')?.focus();return}
@@ -743,10 +786,10 @@ document.addEventListener('click',e=>{
   if(act==='delset'){const it=s.items[sel.i];it.sets.splice(sel.j,1);sel=it.sets.length?{i:sel.i,j:Math.min(sel.j,it.sets.length-1)}:{i:sel.i,j:-1}}
   if(act==='idel'){s.items.splice(sel.i,1);sel=null}
   if(act==='iadd'){s.items.push({name:'',sets:[{reps:'',kg:'',ok:false}]});sel={i:s.items.length-1,j:-1};render();queueSave();document.getElementById(`en-${s.items.length-1}`)?.focus();return}
-  if(act==='done'){s.done=!s.done;s.date=s.done?todayMD():'';
-    if(s.done){toast(sheet.t==='lift'?`${PARTS.find(x=>x.k===sheet.k).n}日打卡！`:'有氧打卡！');closeSheet()}}
+  if(act==='done'){s.done=!s.done;s.date=s.done?md(parseKey(pickDay)):'';
+    if(s.done){toast(`${sheet.t==='lift'?PARTS.find(x=>x.k===sheet.k).n+'日':'有氧'}打卡！${pickDay!==keyOf(new Date())?'（算在 '+md(parseKey(pickDay))+'）':''}`);closeSheet()}}
   if(act==='xsave'){const t=String(xdraft.type).trim();if(!t||t==='其他'){toast('先寫下是什麼運動');return}
-    week.extras.push({type:t,min:String(xdraft.min).trim(),note:String(xdraft.note).trim(),date:todayMD()});closeSheet();toast('櫻桃 +1！')}
+    week.extras.push({type:t,min:String(xdraft.min).trim(),note:String(xdraft.note).trim(),date:md(parseKey(pickDay))});closeSheet();toast('櫻桃 +1！')}
   if(act==='xdel'){week.extras.splice(i,1)}
   render(); queueSave();
 });
@@ -829,6 +872,7 @@ const STARTER_MENUS={"back": [{"kg": "", "name": "滑輪下拉", "reps": "", "se
 function backupData(){loadAllLocal();if(week)allWeeks[wk]=week;return{app:'fruit-basket',version:1,exportedAt:new Date().toISOString(),menus,weeks:allWeeks,cycle}}
 $('#exportBtn').addEventListener('click',async()=>{
   await flush();
+  local.set('lastBackup',Date.now());renderNudge();
   const blob=new Blob([JSON.stringify(backupData(),null,1)],{type:'application/json'});
   const name=`水果籃備份-${keyOf(new Date())}.json`;
   const file=new File([blob],name,{type:'application/json'});
@@ -867,6 +911,7 @@ checkUpdate();
 render();
 (()=>{
   try{ navigator.storage?.persist?.() }catch(e){}
+  if(!local.get('firstUse'))local.set('firstUse',Date.now());
   loadAllLocal();
   menus=local.get('menus')||STARTER_MENUS; if(!menus.period)menus.period=STARTER_MENUS.period;
   cycle=local.get('cycle')||{periods:[]};

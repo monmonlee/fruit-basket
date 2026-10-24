@@ -457,7 +457,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2223';
+const APP_VERSION='2026.10.24-2227';
 /* every person sets their own week: which lift days, how many cardio sessions, cycle on/off */
 const LIFT_SLOTS=[{k:'back',def:'背',fruit:'grape'},{k:'chest',def:'胸',fruit:'berry'},{k:'legs',def:'腿',fruit:'melon'}];
 const DEFAULT_SET={parts:{back:{on:true,name:'背'},chest:{on:true,name:'胸'},legs:{on:true,name:'腿'}},cardio:3,cycle:true};
@@ -524,7 +524,18 @@ function normItem(m){const sets=Number.isFinite(m.sets)?m.sets:(parseInt(m.detai
 /* a session's exercise holds one row per set: {name, sets:[{reps,kg,ok}]} */
 function expand(m,ok=false){const d=normItem(m);return{name:d.name,sets:Array.from({length:d.sets},()=>({reps:String(d.reps),kg:String(d.kg),ok}))}}
 function normExercise(it){if(Array.isArray(it.sets))return{name:it.name||'',sets:it.sets.map(x=>({reps:String(x.reps??''),kg:String(x.kg??''),ok:!!x.ok}))};return expand(it,!!it.ok)}
-function itemsFromMenu(p,old){const prev={};(old||[]).forEach(i=>prev[i.name]=i);return (menus?.[p]||[]).map(m=>prev[m.name]||expand(m))}
+/* the most recent earlier week where she did this exercise (same day first, then any day) */
+function lastSets(part,name){
+  if(!name) return null;
+  const keys=Object.keys(allWeeks).filter(k=>k<wk).sort().reverse();
+  for(const k of keys){const L=allWeeks[k]?.lifts||{};
+    for(const pk of [part,...Object.keys(L).filter(x=>x!==part)]){
+      const it=(L[pk]?.items||[]).find(e=>e&&e.name===name);
+      if(it){const sets=normExercise(it).sets;if(sets.some(x=>x.reps||x.kg))return sets.map(x=>({reps:x.reps,kg:x.kg,ok:false}))}}}
+  return null;
+}
+function itemsFromMenu(p,old){const prev={};(old||[]).forEach(i=>prev[i.name]=i);
+  return (menus?.[p]||[]).map(m=>{if(prev[m.name])return prev[m.name];const e=expand(m),ls=lastSets(p,e.name);if(ls)e.sets=ls;return e})}
 const exDone=it=>it.sets.length>0&&it.sets.every(x=>x.ok);
 /* where each fruit actually grows */
 const GARDEN={back:{n:'葡萄架',bud:'grape-g'},chest:{n:'草莓田',bud:'berry-w'},legs:{n:'西瓜田',bud:'melon-g'},period:{n:'桃樹',bud:'peach-g'}};
@@ -729,7 +740,7 @@ function saveGoal(firstRun){
 let sheet=null;   // {t:'lift',k} | {t:'climb',i} | {t:'extra'}
 const CLIMB_STEPS=[['warm','暖身','慢走或輕鬆動 5 分鐘'],['main','有氧 30 分鐘','前 5–10 分鐘放慢，維持在能講話的速度'],['cool','收操','慢走＋伸展練到的部位']];
 function cur(){if(!week||!sheet)return null;return sheet.t==='lift'?week.lifts[sheet.k]:sheet.t==='climb'?week.climbs[sheet.i]:null}
-function openSheet(s){sheet=s;sel=null;pickDay=defaultDay();xdraft=s.t==='extra'?{type:'爬山',min:'',note:''}:null;
+function openSheet(s){sheet=s;delete sheet.diff;sel=null;pickDay=defaultDay();xdraft=s.t==='extra'?{type:'爬山',min:'',note:''}:null;
   $('#sheet').hidden=false;document.documentElement.style.overflow='hidden';renderSheet();$('#sheetBody').scrollTop=0;setTimeout(()=>$('#sheetClose')?.focus(),60)}
 function closeSheet(){if(sheet&&sheet.t==='setup'&&!sheet.leaving)return;sheet=null;xdraft=null;$('#sheet').hidden=true;document.documentElement.style.overflow=''}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet)closeSheet();
@@ -819,6 +830,13 @@ function renderSheet(){
     const s=cur();
     if(sheet.t==='lift'){const P=PARTS.find(p=>p.k===sheet.k);ic=P.fruit;title=P.n+'日';sub=P.sub}
     else{ic='banana';title='有氧 30 分鐘';sub='跑步、爬坡、飛輪、快走都可以'}
+    if(sheet.diff){const d=sheet.diff, row=(n,kind)=>`<li class="item wc${d.pick[n]?' ok':''}"><div class="irow"><button class="check" data-act="dpick" data-n="${esc(n)}" aria-pressed="${!!d.pick[n]}" aria-label="${kind}${esc(n)}">${d.pick[n]?'✓':''}</button>
+        <div class="nm"><b>${esc(n)}</b><span>${kind==='加進'?'這次新增的，加進固定菜單':'這次沒做，從固定菜單拿掉'}</span></div><span></span></div></li>`;
+      $('#sheetIcon').innerHTML=icon(ic);$('#sheetTitle').innerHTML=`${title}打卡了！<small>這次和固定菜單不太一樣</small>`;
+      $('#sheetBody').innerHTML=`<section class="stage cur"><h4>要更新固定菜單嗎？</h4><p class="timeline">勾起來的會存進「編輯菜單」，下次${esc(title)}就會照這樣。</p>
+        <ul class="items">${d.added.map(n=>row(n,'加進')).join('')}${d.removed.map(n=>row(n,'拿掉')).join('')}</ul>
+        <div class="btnrow"><button class="ghost" data-act="dskip">這次就好</button><button class="stamp-btn" style="padding:10px" data-act="dapply">更新菜單</button></div></section>`;
+      return}
     const tabs=sheet.t==='climb'?`<div class="tabs" role="tablist">${week.climbs.map((c,i)=>`<button role="tab" aria-selected="${sheet.i===i}" data-act="ctab" data-i="${i}">第 ${i+1} 次${c.done?' ✓':''}</button>`).join('')}</div>`:'';
     body=tabs+stageGo(s)+stageDo(s)+stageEnd(s);
   }
@@ -915,6 +933,21 @@ document.addEventListener('click',e=>{
   if(act==='delset'){const it=s.items[sel.i];it.sets.splice(sel.j,1);sel=it.sets.length?{i:sel.i,j:Math.min(sel.j,it.sets.length-1)}:{i:sel.i,j:-1}}
   if(act==='idel'){s.items.splice(sel.i,1);sel=null}
   if(act==='iadd'){s.items.push({name:'',sets:[{reps:'',kg:'',ok:false}]});sel={i:s.items.length-1,j:-1};render();queueSave();document.getElementById(`en-${s.items.length-1}`)?.focus();return}
+  if(act==='done'&&!s.done&&sheet.t==='lift'){
+    const menuNames=(menus?.[sheet.k]||[]).map(m=>m.name), here=s.items.filter(e=>e.name.trim());
+    const added=here.filter(e=>!menuNames.includes(e.name)).map(e=>e.name), removed=menuNames.filter(n=>!here.some(e=>e.name===n));
+    if(added.length||removed.length){
+      s.done=true;s.date=md(parseKey(pickDay));
+      sheet.diff={added,removed,pick:Object.fromEntries([...added,...removed].map(n=>[n,true]))};
+      render();queueSave();$('#sheetBody').scrollTop=0;return}
+  }
+  if(act==='dpick'){const n=b.dataset.n;sheet.diff.pick[n]=!sheet.diff.pick[n];renderSheet();return}
+  if(act==='dapply'||act==='dskip'){
+    if(act==='dapply'){const d=sheet.diff,k=sheet.k,cur0=(menus[k]||[]).filter(m=>!(d.removed.includes(m.name)&&d.pick[m.name]));
+      s.items.filter(e=>d.added.includes(e.name)&&d.pick[e.name]).forEach(e=>cur0.push({name:e.name,sets:e.sets.length||1,reps:e.sets[0]?.reps||'',kg:e.sets[0]?.kg||''}));
+      menus[k]=cur0;local.set('menus',menus);mdraft=null;toast('固定菜單更新了，下次就會照這樣')}
+    else toast(`${PARTS.find(x=>x.k===sheet.k).n}日打卡！`);
+    closeSheet();render();return}
   if(act==='done'){s.done=!s.done;s.date=s.done?md(parseKey(pickDay)):'';
     if(s.done){toast(`${sheet.t==='lift'?PARTS.find(x=>x.k===sheet.k).n+'日':'有氧'}打卡！${pickDay!==keyOf(new Date())?'（算在 '+md(parseKey(pickDay))+'）':''}`);closeSheet()}}
   if(act==='xsave'){const t=String(xdraft.type).trim();if(!t||t==='其他'){toast('先寫下是什麼運動');return}

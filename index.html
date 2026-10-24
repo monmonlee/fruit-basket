@@ -222,6 +222,17 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 .fr.ripe small{color:var(--ink)}
 .fr.sel{background:var(--lilac-soft);outline:2px solid var(--lilac)}
 .fr.plus svg{opacity:.55}
+.tree.g-back::before{left:0;top:8px;width:6px}
+.tree.g-back::after{left:-4px;right:6px;top:2px;width:auto;height:8px;border-radius:4px;background:var(--basket-line);box-shadow:none}
+.tree.g-back .twig::before{background:#6FB45A;opacity:1;height:3px}
+.tree.g-back .branch{grid-template-columns:72px 1fr}
+.tree.g-chest::before,.tree.g-chest::after,.tree.g-legs::before,.tree.g-legs::after,.tree.g-chest .soil,.tree.g-legs .soil,.tree.g-back .soil{display:none}
+.tree.g-chest,.tree.g-legs{padding-top:4px}
+.tree.g-chest .twig::before{left:-6px;right:0;top:22px;height:16px;border-radius:8px;background:var(--basket-in);opacity:.55}
+.tree.g-legs .twig::before{left:-10px;right:4px;top:14px;height:4px;opacity:1;background:repeating-linear-gradient(90deg,#6FB45A 0 12px,#8CCB7A 12px 15px,#6FB45A 15px 22px)}
+.tree.g-legs .twig::after{content:"";position:absolute;left:-6px;right:0;top:26px;height:10px;border-radius:6px;background:var(--basket-in);opacity:.45;z-index:-1}
+.tree.g-legs .twig,.tree.g-chest .twig{isolation:isolate}
+.tree.g-period::after{background:#F4A9BC;box-shadow:-14px 6px 0 -4px #6CC66F,14px 6px 0 -4px #6CC66F}
 .harvest{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
 .harvest b{font-family:var(--num);color:var(--ink);font-weight:600}
 .setedit{background:var(--bg);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
@@ -369,10 +380,19 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2141';
+const APP_VERSION='2026.10.24-2148';
 const PARTS=[{k:'back',n:'背',sub:'背日',fruit:'grape',fn:'葡萄'},{k:'chest',n:'胸',sub:'胸・肩・三頭',fruit:'berry',fn:'草莓'},{k:'legs',n:'腿',sub:'腿日',fruit:'melon',fn:'西瓜'},{k:'period',n:'經期',sub:'輕重量，想練哪裡就練哪裡',fruit:'peach',fn:'桃子'}];
 /* fruits drawn in a 40×40 box centred on 0,0 */
 function fruit(t){
+  if(t==='grape-g') return `<path d="M0 -13 Q1 -18 4 -20" stroke="#7A5230" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="7" cy="-16" rx="6" ry="3" fill="#5DBB63" transform="rotate(-20 7 -16)"/>
+    <g fill="#C3E59A" stroke="#86B85E" stroke-width="1.2">${[[-8,-7],[0,-8],[8,-7],[-4,1],[4,1],[0,9]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="5.6"/>`).join('')}</g>`;
+  if(t==='berry-w') return `<path d="M0 17 C-15 7 -17 -7 -9 -10 C-4 -12 4 -12 9 -10 C17 -7 15 7 0 17Z" fill="#E6F3D2" stroke="#A9CF8A" stroke-width="1.2"/>
+    <g fill="#C9B86A">${[[-7,-3],[0,-4],[7,-3],[-4,4],[4,4],[0,10]].map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="1" ry="1.5"/>`).join('')}</g>
+    <path d="M-9 -11 L-3 -10 L0 -16 L3 -10 L9 -11 L4 -7 L0 -9 L-4 -7Z" fill="#4CAF50" stroke="#388E3C" stroke-width="1" stroke-linejoin="round"/>`;
+  if(t==='melon-g') return `<ellipse cx="0" cy="3" rx="12" ry="10" fill="#A8D97A" stroke="#5E9E3E" stroke-width="1.4"/>
+    <g stroke="#5E9E3E" stroke-width="1.6" fill="none" stroke-linecap="round"><path d="M-6 -6 Q-9 3 -6 12"/><path d="M0 -7 Q-1 3 0 13"/><path d="M6 -6 Q9 3 6 12"/></g><path d="M0 -7 Q2 -11 5 -12" stroke="#7A5230" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+  if(t==='peach-g') return `<path d="M0 -11 Q1 -16 3 -18" stroke="#7A5230" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="8" cy="-15" rx="6.5" ry="3" fill="#5DBB63" transform="rotate(-25 8 -15)"/>
+    <path d="M0 -11 C-15 -15 -19 3 -10 12 C-5 17 5 17 10 12 C19 3 15 -15 0 -11Z" fill="#D3EAA8" stroke="#96C26B" stroke-width="1.3"/><path d="M0 -10 Q-5 2 0 15" stroke="#96C26B" stroke-width="1.3" fill="none" opacity=".7"/>`;
   if(t==='bud') return `<path d="M0 -7 Q1 -12 3 -13" stroke="#7A5230" stroke-width="1.8" fill="none" stroke-linecap="round"/><ellipse cx="6" cy="-11" rx="5" ry="2.4" fill="#8CCB7A" transform="rotate(-20 6 -11)"/>
     <circle cx="0" cy="2" r="8" fill="#C9E8B4" stroke="#86BF72" stroke-width="1.4"/><circle cx="-3" cy="-1" r="2" fill="#fff" opacity=".6"/>`;
   if(t==='plus') return `<circle r="11" fill="none" stroke="#A39DC0" stroke-width="2" stroke-dasharray="4 3"/><path d="M-5 0 H5 M0 -5 V5" stroke="#A39DC0" stroke-width="2.4" stroke-linecap="round"/>`;
@@ -419,6 +439,8 @@ function expand(m,ok=false){const d=normItem(m);return{name:d.name,sets:Array.fr
 function normExercise(it){if(Array.isArray(it.sets))return{name:it.name||'',sets:it.sets.map(x=>({reps:String(x.reps??''),kg:String(x.kg??''),ok:!!x.ok}))};return expand(it,!!it.ok)}
 function itemsFromMenu(p,old){const prev={};(old||[]).forEach(i=>prev[i.name]=i);return (menus?.[p]||[]).map(m=>prev[m.name]||expand(m))}
 const exDone=it=>it.sets.length>0&&it.sets.every(x=>x.ok);
+/* where each fruit actually grows */
+const GARDEN={back:{n:'葡萄架',bud:'grape-g'},chest:{n:'草莓田',bud:'berry-w'},legs:{n:'西瓜田',bud:'melon-g'},period:{n:'桃樹',bud:'peach-g'}};
 function normalize(w){
   const b=blankWeek(); w=w?clone(w):b;
   w.lifts=w.lifts||b.lifts; PARTS.forEach(p=>{const l=Object.assign(blankLift(),w.lifts[p.k]||{});l.items=l.items.map(normExercise);w.lifts[p.k]=l});
@@ -584,7 +606,7 @@ function stageDo(s){
     const lbl=x=>x.reps||x.kg?`${x.reps||'?'}×${x.kg||'–'}`:'未填';
     const branches=s.items.map((it,i)=>`<div class="branch">
         <button class="bname${sel&&sel.i===i&&sel.j<0?' sel':''}" data-act="pick" data-i="${i}" data-j="-1">${esc(it.name)||'新動作'}<small>${it.sets.filter(x=>x.ok).length}/${it.sets.length} 組</small></button>
-        <div class="twig">${it.sets.map((x,j)=>`<button class="fr${x.ok?' ripe':''}${sel&&sel.i===i&&sel.j===j?' sel':''}" data-act="pick" data-i="${i}" data-j="${j}" aria-label="${esc(it.name)} 第 ${j+1} 組，${lbl(x)}${x.ok?'，完成':''}">${icon(x.ok?P.fruit:'bud')}<small>${lbl(x)}</small></button>`).join('')}
+        <div class="twig">${it.sets.map((x,j)=>`<button class="fr${x.ok?' ripe':''}${sel&&sel.i===i&&sel.j===j?' sel':''}" data-act="pick" data-i="${i}" data-j="${j}" aria-label="${esc(it.name)} 第 ${j+1} 組，${lbl(x)}${x.ok?'，完成':''}">${icon(x.ok?P.fruit:GARDEN[sheet.k].bud)}<small>${lbl(x)}</small></button>`).join('')}
           <button class="fr plus" data-act="addset" data-i="${i}" aria-label="${esc(it.name)} 加一組">${icon('plus')}<small>加一組</small></button></div>
       </div>`).join('');
     let ed='';
@@ -597,21 +619,21 @@ function stageDo(s){
           <button class="ripe-btn${x.ok?' undo':''}" data-act="ripe">${x.ok?'改回還沒做':'這組完成，採下來！'}</button>
           <div class="acts"><button data-act="copyset">⧉ 複製成下一組</button><button class="danger" data-act="delset">刪掉這組</button></div></div>`;
       }else{const id=`${sel.i}`;
-        ed=`<div class="setedit"><h5>這根樹枝<button class="xbtn" style="width:28px;height:28px;font-size:12px" data-act="unpick" aria-label="收起">✕</button></h5>
+        ed=`<div class="setedit"><h5>這個動作<button class="xbtn" style="width:28px;height:28px;font-size:12px" data-act="unpick" aria-label="收起">✕</button></h5>
           <div class="fld"><label for="en-${id}">動作名稱</label><input id="en-${id}" data-ex="name" value="${esc(it.name)}" placeholder="例：硬舉"></div>
           <div class="acts"><button data-act="ripeall">全部組數一起採收</button><button class="danger" data-act="idel">這次不做這個動作</button></div></div>`;}
     }
     const all=s.items.flatMap(it=>it.sets), done=all.filter(x=>x.ok);
     const vol=done.reduce((a,x)=>a+(parseFloat(x.reps)||0)*(parseFloat(x.kg)||0),0);
     list=`<div class="wcrow">${wc('warm')}${wc('cool')}</div>
-      ${s.items.length?`<div class="tree">${branches}<span class="soil"></span></div>`:`<p class="empty">還沒有${P.n}日菜單，可以在下面種一根新樹枝</p>`}
+      ${s.items.length?`<div class="tree g-${sheet.k}">${branches}<span class="soil"></span></div>`:`<p class="empty">還沒有${P.n}日菜單，可以在下面種一株新的</p>`}
       ${ed}
       <div class="harvest"><span>採收 <b>${done.length}/${all.length}</b> 顆</span><span>總重量 <b>${Math.round(vol).toLocaleString()}</b> kg</span></div>
-      <button class="addone" data-act="iadd">＋ 種一根新樹枝（新動作）</button>`;
+      <button class="addone" data-act="iadd">＋ 種一株新的（新動作）</button>`;
   }else{
     list=`<ul class="items">${CLIMB_STEPS.map(([f,a,b])=>chk(s[f],`data-act="wc" data-f="${f}"`,a,b)).join('')}</ul>`;
   }
-  return `<section class="stage${s.departAt&&!s.done?' cur':''}"><h4><i>2</i>${sheet.t==='lift'?'今天的果樹<span class="tip" style="margin-left:auto">點果實改那一組</span>':'有氧'}</h4>${list}</section>`;
+  return `<section class="stage${s.departAt&&!s.done?' cur':''}"><h4><i>2</i>${sheet.t==='lift'?`今天的${GARDEN[sheet.k].n}<span class="tip" style="margin-left:auto">點果實改那一組</span>`:'有氧'}</h4>${list}</section>`;
 }
 function stageEnd(s){
   return `<section class="stage"><h4><i>3</i>練完</h4>${stepper('post','實際有多痛苦？',s.post)}

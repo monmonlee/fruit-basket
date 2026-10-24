@@ -218,6 +218,26 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 .steps{display:flex;justify-content:center;gap:6px}
 .steps i{width:8px;height:8px;border-radius:50%;background:var(--line)}
 .steps i.on{background:var(--primary);width:20px;border-radius:4px}
+/* jam shelf: one jar per month */
+.shelf{display:flex;gap:14px;overflow-x:auto;padding:6px 2px 0;scroll-snap-type:x proximity}
+.shelf::after{content:"";flex:0 0 1px}
+.jar{flex:0 0 74px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;scroll-snap-align:end}
+.jar svg{width:70px;height:92px;overflow:visible}
+.jar small{font-size:12px;color:var(--muted);text-align:center;line-height:1.3}
+.jar.cur small{color:var(--primary)}
+.board{height:8px;border-radius:4px;background:var(--basket);margin-top:-2px;box-shadow:0 3px 0 var(--basket-line)}
+.jarcard{display:grid;grid-template-columns:56px 1fr;gap:12px;align-items:center}
+.jarcard svg{width:52px;height:68px}
+/* effects */
+.spark{position:fixed;width:24px;height:24px;margin:-12px 0 0 -12px;pointer-events:none;z-index:60;animation:spark var(--t,.9s) cubic-bezier(.2,.7,.3,1) forwards}
+.spark.dot{width:9px;height:9px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--c)}
+.spark svg{width:100%;height:100%}
+@keyframes spark{0%{transform:translate(0,0) scale(.4);opacity:1}70%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) rotate(var(--r)) scale(1);opacity:0}}
+.dropin{animation:dropin .55s cubic-bezier(.3,1.4,.5,1) both;transform-box:fill-box;transform-origin:center}
+@keyframes dropin{0%{transform:translateY(-70px) scale(.7);opacity:0}60%{opacity:1}100%{transform:none}}
+.fr.pop svg{animation:popf .35s ease}
+@keyframes popf{50%{transform:scale(1.35)}}
+@media (prefers-reduced-motion:reduce){.spark,.dropin,.fr.pop svg{animation:none}.spark{display:none}}
 /* appearance */
 .seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:4px;gap:4px}
 .seg button{flex:1;padding:8px;border-radius:99px;color:var(--muted);font-size:14px}
@@ -351,6 +371,10 @@ details.menu summary span{font-size:12px;color:var(--muted)}
       <button id="mnext" aria-label="下個月">›</button>
     </nav>
     <div class="mstats" id="mstats"></div>
+    <section class="sec">
+      <h2>果醬櫃 <span>每個月熬一罐，顏色是那個月練最多的</span></h2>
+      <div class="shelf" id="shelf"></div><div class="board" aria-hidden="true"></div>
+    </section>
     <div class="cal">
       <div class="dow" aria-hidden="true"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
       <div class="grid" id="grid"></div>
@@ -398,7 +422,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
     <div class="bubble" id="bubble">新的一週，去玩吧</div>
   </section>
 
-  <div id="nudge"></div>
+  <div id="nudge" style="display:flex;flex-direction:column;gap:12px"></div>
 
   <section class="cycle" id="cycle" aria-label="月經週期"></section>
 
@@ -436,6 +460,8 @@ details.menu summary span{font-size:12px;color:var(--muted)}
       <button role="radio" data-theme-opt="light">淺色</button>
       <button role="radio" data-theme-opt="dark">深色</button>
     </div>
+    <div class="goalrow" style="border:0;padding-top:4px"><span></span><div><b>音效</b><small>採收、打卡和裝滿時的小聲音</small></div>
+      <button class="sw" role="switch" id="soundSw" aria-label="音效"></button></div>
   </section>
 
   <p class="note" id="note">讀取中…</p>
@@ -457,7 +483,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2227';
+const APP_VERSION='2026.10.24-2234';
 /* every person sets their own week: which lift days, how many cardio sessions, cycle on/off */
 const LIFT_SLOTS=[{k:'back',def:'背',fruit:'grape'},{k:'chest',def:'胸',fruit:'berry'},{k:'legs',def:'腿',fruit:'melon'}];
 const DEFAULT_SET={parts:{back:{on:true,name:'背'},chest:{on:true,name:'胸'},legs:{on:true,name:'腿'}},cardio:3,cycle:true};
@@ -642,7 +668,8 @@ function renderHero(){
   const placed=[...liftsDone(s).slice(0,LIFT_GOAL).map(p=>({t:p.fruit,s:'lift:'+p.k,n:p.n+'日'})),
     ...s.climbs.map((c,i)=>c.done?{t:'banana',s:'climb:'+i,n:`第 ${i+1} 次有氧`}:null).filter(Boolean),
     ...(s.extras||[]).map(x=>({t:'cherry',s:'extra',n:x.type}))].slice(0,GOAL).map((f,i)=>({...f,...slots[i]}));
-  $('#spots').innerHTML=placed.map(f=>`<g transform="translate(${f.x} ${f.y}) scale(${sc})" data-act="tile" data-s="${f.s}" role="button" tabindex="0" aria-label="${f.n}，點一下修改"><circle r="17" fill="transparent"/>${fruit(f.t)}</g>`).join('');
+  const grew=lastCount>=0&&count()>lastCount;
+  $('#spots').innerHTML=placed.map((f,i)=>`<g transform="translate(${f.x} ${f.y}) scale(${sc})" data-act="tile" data-s="${f.s}" role="button" tabindex="0" aria-label="${f.n}，點一下修改"><g class="${grew&&i===placed.length-1?'dropin':''}"><circle r="17" fill="transparent"/>${fruit(f.t)}</g></g>`).join('');
   /* unpicked fruit float above the basket; tap one to start it */
   const SLOTS=[[12,18],[37,12],[63,12],[88,18],[25,41],[75,41]];
   const gh=[];
@@ -655,7 +682,10 @@ function renderHero(){
   $('#todayTitle').textContent=isThisWeek()?'今天要去摘哪一個？':'這週的籃子';
   $('#todaySub').textContent=placed.length?'籃子裡的點了可以修改':'點半透明的水果開始';
   const n=count(); $('#score').innerHTML=`${n}<small> / ${GOAL}</small>`; $('#bubble').textContent=message(n);
-  if(lastCount>=0&&n>lastCount){const g=$('#gecko');g.classList.remove('wiggle');void g.offsetWidth;g.classList.add('wiggle')}
+  if(lastCount>=0&&n>lastCount){const g=$('#gecko');g.classList.remove('wiggle');void g.offsetWidth;g.classList.add('wiggle');
+    const kind=placed[placed.length-1]?.t||'grape';
+    if(n>=GOAL&&lastCount<GOAL){setTimeout(()=>{rain(['grape','berry','melon','peach','banana','cherry'],30);play('full');toast('整籃裝滿了！這週辛苦了')},350)}
+    else setTimeout(()=>{const [cx,cy]=centerOf(g);burst(cx,cy-20,[kind,'#FFD54A','#7FD39A'],10,120);play('stamp')},300)}
   lastCount=n;
 }
 function renderNav(){
@@ -875,8 +905,10 @@ function renderNudge(){
   const hasData=Object.values(allWeeks).some(w=>w&&(Object.values(w.lifts||{}).some(l=>l&&l.done)||(w.climbs||[]).some(c=>c&&c.done)||(w.extras||[]).length));
   const days=last?Math.floor((now-last)/D):null;
   const show=hasData&&now>snooze&&(last?days>=14:now-first>=3*D);
-  $('#nudge').innerHTML=show?`<div class="nudge"><p>${last?`上次備份是 <b>${days} 天前</b>。`:'還沒有備份過。'}紀錄只存在這支手機裡，備份一下比較安心。</p>
-    <div class="btnrow"><button data-act="snooze">之後再說</button><button class="main" data-act="backupNow">現在備份</button></div></div>`:'';
+  const jr=jarReady();
+  $('#nudge').innerHTML=(jr?`<div class="nudge" style="border-color:var(--primary)"><div class="jarcard">${jarSVG(jr.t,'ready',jr.m+'月')}<p><b>${jr.m} 月的果醬熬好了！</b><br>那個月你完成了 ${jr.t.total} 次，去果醬櫃看看。</p></div>
+    <div class="btnrow"><button data-act="jarlater">之後再看</button><button class="main" data-act="jargo" data-y="${jr.y}" data-m="${jr.mo}">去看看</button></div></div>`:'')+(show?`<div class="nudge"><p>${last?`上次備份是 <b>${days} 天前</b>。`:'還沒有備份過。'}紀錄只存在這支手機裡，備份一下比較安心。</p>
+    <div class="btnrow"><button data-act="snooze">之後再說</button><button class="main" data-act="backupNow">現在備份</button></div></div>`:'');
 }
 function render(){
   $('#goalLine').textContent=`每週 ${GOAL} 次：${[...PARTS.filter(p=>p.k!=='period').map(p=>p.n),SET.cardio?`有氧×${SET.cardio}`:''].filter(Boolean).join('、')}`;
@@ -890,6 +922,8 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]'); if(!b) return;
   const act=b.dataset.act, i=+b.dataset.i;
   if(act==='close'){closeSheet();return}
+  if(act==='jarmonth'||act==='jargo'){mcur=new Date(+b.dataset.y,+b.dataset.m,1);if(act==='jargo'){const n=new Date(),p=new Date(n.getFullYear(),n.getMonth()-1,1);local.set('jarSeen',`${p.getFullYear()}-${p.getMonth()+1}`);play('jam')}setView('month');renderNudge();window.scrollTo(0,0);return}
+  if(act==='jarlater'){const n=new Date(),p=new Date(n.getFullYear(),n.getMonth()-1,1);local.set('jarSeen',`${p.getFullYear()}-${p.getMonth()+1}`);renderNudge();return}
   if(act==='opensettings'){sdraft=JSON.parse(JSON.stringify(SET));openSheet({t:'goal'});return}
   if(act==='stog'){const k=b.dataset.k;if(k==='cycle')sdraft.cycle=!sdraft.cycle;else sdraft.parts[k].on=!sdraft.parts[k].on;renderSheet();return}
   if(act==='scardio'){sdraft.cardio=Math.max(0,Math.min(7,sdraft.cardio+(+b.dataset.d)));renderSheet();return}
@@ -926,6 +960,8 @@ document.addEventListener('click',e=>{
   if(act==='pain'){const f=b.dataset.f;s[f]=s[f]==null?5:Math.min(10,Math.max(1,s[f]+(+b.dataset.d)))}
   if(act==='wc'){const f=b.dataset.f;s[f]=!s[f]}
   if(act==='ripe'){const x=s.items[sel.i].sets[sel.j];x.ok=!x.ok;
+    if(x.ok){const f=document.querySelector(`.fr[data-i="${sel.i}"][data-j="${sel.j}"]`),P=PARTS.find(p=>p.k===sheet.k);if(f){const [cx,cy]=centerOf(f);burst(cx,cy,['#FFD54A','#7FD39A',JAM[P.fruit]],9,46)}play('pop');
+      const k=`${sel.i}:${sel.j}`;setTimeout(()=>{const g=document.querySelector(`.fr[data-i="${k.split(':')[0]}"][data-j="${k.split(':')[1]}"]`);g?.classList.add('pop')},0)}
     if(x.ok){const it=s.items[sel.i],nx=it.sets.findIndex(y=>!y.ok);sel=nx>=0?{i:sel.i,j:nx}:(()=>{const ni=s.items.findIndex(e=>!exDone(e));return ni>=0?{i:ni,j:s.items[ni].sets.findIndex(y=>!y.ok)}:null})()}}
   if(act==='ripeall'){s.items[sel.i].sets.forEach(x=>x.ok=true);sel=null}
   if(act==='addset'){const it=s.items[i],last=it.sets[it.sets.length-1]||{reps:'',kg:''};it.sets.push({reps:last.reps,kg:last.kg,ok:false});sel={i,j:it.sets.length-1}}
@@ -1019,6 +1055,7 @@ function renderMonth(){
     start=new Date(start);start.setDate(start.getDate()+7);
   }
   $('#grid').innerHTML=rows;
+  renderShelf();
   $('#mlegend').innerHTML=[...PARTS.map(p=>`<span>${icon(p.fruit)}${p.n}</span>`),SET.cardio?`<span>${icon('banana')}有氧</span>`:'',`<span>${icon('cherry')}額外</span>`].join('')+(SET.cycle?Object.entries(SEASONS).map(([k,v])=>`<span><i style="display:inline-block;width:12px;height:3px;border-radius:2px;background:var(--${k})"></i>${v.n}</span>`).join(''):'');
   $('#mstats').innerHTML=`<div class="stat"><span>重訓</span><b>${lifts}</b></div><div class="stat"><span>有氧</span><b>${climbs}</b></div><div class="stat"><span>額外</span><b>${extras}</b></div><div class="stat"><span>全滿的週</span><b>${full}</b></div>
     <div class="stat"><span>預估痛苦</span><b>${avg(pre)}</b></div><div class="stat"><span>實際痛苦</span><b>${avg(post)}</b></div><div class="stat"><span>多想了</span><b>${gap(pre,post)}</b></div><div class="stat"><span>平均拖了</span><b style="font-size:15px">${lagTxt(lag)}</b></div>`;
@@ -1056,6 +1093,74 @@ $('#importFile').addEventListener('change',async e=>{
     loadAllLocal();loadWeek();toast(`匯入了 ${ks.length} 週的紀錄`);
   }catch(err){toast('這個檔案不是水果籃的備份，請選匯出的 .json 檔')}
 });
+
+/* ---------- sound: tiny synthesized cues, no audio files ---------- */
+let actx=null, soundOn=local.get('sound')!==false;
+function ac(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();return actx}catch(e){return null}}
+function tone(f,at,dur,type='sine',vol=.12,f2){const a=ac();if(!a)return;const t=a.currentTime+at,o=a.createOscillator(),g=a.createGain();
+  o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.012);g.gain.exponentialRampToValueAtTime(.0008,t+dur);
+  o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+.02)}
+const SFX={
+  pop(){tone(520,0,.12,'triangle',.14,980)},
+  stamp(){[523,659,784].forEach((f,i)=>tone(f,i*.09,.28,'triangle',.11))},
+  full(){[523,659,784,1047,1319].forEach((f,i)=>tone(f,i*.08,.4,'triangle',.1));tone(2093,.45,.5,'sine',.05)},
+  jam(){tone(180,0,.25,'sine',.16,90);tone(240,.18,.25,'sine',.12,120)}};
+function play(n){if(soundOn)SFX[n]?.()}
+$('#soundSw').setAttribute('aria-checked',soundOn);
+$('#soundSw').addEventListener('click',()=>{soundOn=!soundOn;local.set('sound',soundOn);$('#soundSw').setAttribute('aria-checked',soundOn);if(soundOn)play('pop')});
+
+/* ---------- effects ---------- */
+const reduceMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+function burst(x,y,kinds,n=10,spread=110){
+  if(reduceMotion())return;
+  for(let i=0;i<n;i++){const el=document.createElement('span'),k=kinds[i%kinds.length],a=Math.random()*Math.PI*2,d=spread*(.45+Math.random()*.55);
+    el.className='spark'+(k.startsWith('#')?' dot':'');if(k.startsWith('#'))el.style.setProperty('--c',k);else el.innerHTML=icon(k);
+    el.style.left=x+'px';el.style.top=y+'px';el.style.setProperty('--dx',Math.cos(a)*d+'px');el.style.setProperty('--dy',Math.sin(a)*d-30+'px');
+    el.style.setProperty('--r',(Math.random()*240-120)+'deg');el.style.setProperty('--t',(.7+Math.random()*.5)+'s');
+    document.body.appendChild(el);setTimeout(()=>el.remove(),1300)}
+}
+function rain(kinds,n=28){
+  if(reduceMotion())return;
+  const w=innerWidth;for(let i=0;i<n;i++){const el=document.createElement('span'),k=kinds[i%kinds.length];el.className='spark';el.innerHTML=icon(k);
+    el.style.left=Math.random()*w+'px';el.style.top='-30px';el.style.setProperty('--dx',(Math.random()*80-40)+'px');el.style.setProperty('--dy',(innerHeight*.6+Math.random()*innerHeight*.4)+'px');
+    el.style.setProperty('--r',(Math.random()*360-180)+'deg');el.style.setProperty('--t',(1.2+Math.random()*1.1)+'s');el.style.animationDelay=Math.random()*.5+'s';
+    document.body.appendChild(el);setTimeout(()=>el.remove(),3000)}
+}
+const centerOf=el=>{const r=el.getBoundingClientRect();return[r.left+r.width/2,r.top+r.height/2]};
+
+/* ---------- jam jars: one per month ---------- */
+const JAM={grape:'#7B4BC4',berry:'#D93A4A',melon:'#E8566A',peach:'#F2945F',banana:'#E2B23A',cherry:'#A8203A'};
+function monthTally(y,mo){
+  const ev=eventsByDay(), last=new Date(y,mo+1,0), by={}; let total=0;
+  for(let d=1;d<=last.getDate();d++){(ev[keyOf(new Date(y,mo,d))]||[]).forEach(e=>{const f=e.t==='l'?e.f:e.t==='x'?'cherry':'banana';by[f]=(by[f]||0)+1;total++})}
+  const top=Object.entries(by).sort((a,b)=>b[1]-a[1])[0];
+  return{total,fill:Math.min(1,total/(GOAL*last.getDate()/7)),color:top?JAM[top[0]]:null,top:top?.[0]};
+}
+function jarSVG(t,id,label){
+  const h=t.fill*46, y=78-h;
+  return `<svg viewBox="0 0 60 92" aria-hidden="true"><defs><clipPath id="jc-${id}"><path d="M10 26 Q8 26 8 32 V80 Q8 86 14 86 H46 Q52 86 52 80 V32 Q52 26 50 26 Z"/></clipPath></defs>
+    <path d="M10 26 Q8 26 8 32 V80 Q8 86 14 86 H46 Q52 86 52 80 V32 Q52 26 50 26 Z" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+    ${t.color?`<g clip-path="url(#jc-${id})"><rect x="0" y="${y}" width="60" height="${h+10}" fill="${t.color}"/><path d="M0 ${y} Q15 ${y-3} 30 ${y} T60 ${y}" fill="${t.color}"/><rect x="0" y="${y+2}" width="60" height="4" fill="#fff" opacity=".18"/></g>`:''}
+    <path d="M14 34 V70" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".45"/>
+    <rect x="12" y="18" width="36" height="9" rx="2" fill="var(--basket-line)"/>
+    <path d="M6 18 Q30 6 54 18 L50 24 Q30 16 10 24 Z" fill="${t.color||'var(--muted)'}" opacity=".9"/>
+    <g fill="#fff" opacity=".5"><rect x="16" y="14" width="5" height="4"/><rect x="27" y="11" width="5" height="4"/><rect x="38" y="14" width="5" height="4"/></g>
+    <rect x="16" y="46" width="28" height="16" rx="3" fill="#FFFDF6" stroke="var(--line)"/><text x="30" y="58" text-anchor="middle" font-size="10" font-family="var(--num)" fill="#3A2B20">${label}</text></svg>`;
+}
+function renderShelf(){
+  const now=new Date(), months=[];
+  for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push(d)}
+  const cells=months.map((d,i)=>{const t=monthTally(d.getFullYear(),d.getMonth()),cur=i===months.length-1;
+    if(!t.total&&!cur)return '';
+    return `<button class="jar${cur?' cur':''}" data-act="jarmonth" data-y="${d.getFullYear()}" data-m="${d.getMonth()}" aria-label="${d.getMonth()+1} 月果醬，完成 ${t.total} 次">
+      ${jarSVG(t,`${d.getFullYear()}${d.getMonth()}`,`${d.getMonth()+1}月`)}<small>${cur?'熬煮中':`${t.total} 次`}</small></button>`}).join('');
+  $('#shelf').innerHTML=cells;
+  const sh=$('#shelf');sh.scrollLeft=sh.scrollWidth;
+}
+/* last month's jar is ready: invite her to the shelf once */
+function jarReady(){const n=new Date(),p=new Date(n.getFullYear(),n.getMonth()-1,1),k=`${p.getFullYear()}-${p.getMonth()+1}`;
+  if(local.get('jarSeen')===k)return null;const t=monthTally(p.getFullYear(),p.getMonth());return t.total?{k,t,m:p.getMonth()+1,y:p.getFullYear(),mo:p.getMonth()}:null}
 
 /* ---------- appearance ---------- */
 function applyTheme(t){

@@ -457,7 +457,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2220';
+const APP_VERSION='2026.10.24-2223';
 /* every person sets their own week: which lift days, how many cardio sessions, cycle on/off */
 const LIFT_SLOTS=[{k:'back',def:'背',fruit:'grape'},{k:'chest',def:'胸',fruit:'berry'},{k:'legs',def:'腿',fruit:'melon'}];
 const DEFAULT_SET={parts:{back:{on:true,name:'背'},chest:{on:true,name:'胸'},legs:{on:true,name:'腿'}},cardio:3,cycle:true};
@@ -742,7 +742,8 @@ function stageGo(s){
     const t=[];if(s.planAt)t.push(`${hm(s.planAt)} 打算去`);if(s.departAt)t.push(`${hm(s.departAt)} 出門`);
     inner=`<p class="timeline">${t.length?t.join(' → '):'這次沒有記出門時間'}${s.planAt&&s.departAt?` · 拖了 <b>${dur(mins(s.planAt,s.departAt))}</b>`:''}</p>${stepper('pre','出門前預估痛苦',s.pre)}`;
   }else if(s.departAt){
-    inner=`<p class="timeline"><b>${hm(s.departAt)} 出門了</b>${s.planAt?` · 從打算到出門 ${dur(mins(s.planAt,s.departAt))}`:''}</p>`;
+    inner=`<p class="timeline"><b>${hm(s.departAt)} 出門了</b>${s.planAt?` · 從打算到出門 ${dur(mins(s.planAt,s.departAt))}`:''}</p>${stepper('pre','出門前預估痛苦',s.pre)}
+      <button class="ghost" data-act="undepart">按錯了，還沒出門</button>`;
   }else if(s.planAt){
     inner=`<p class="timeline"><b>${hm(s.planAt)} 打算去</b> · 到現在 ${dur(mins(s.planAt,new Date().toISOString()))}</p>${stepper('pre','想到要去，覺得會多痛苦？',s.pre)}
       <button class="go-btn" data-act="depart">出門了！</button><button class="ghost" data-act="unplan">今天先不去了</button>`;
@@ -902,6 +903,8 @@ document.addEventListener('click',e=>{
   if(act==='plan'){s.planAt=now;toast('記下了，出門時再按「出門了！」')}
   if(act==='depart'){if(!s.planAt)s.planAt=now;s.departAt=now;closeSheet();toast('出門了！回來記得打卡')}
   if(act==='unplan'){s.planAt=null;s.departAt=null}
+  /* pressed 出門 by mistake: a direct departure set both times at once, so clear both; otherwise keep the plan */
+  if(act==='undepart'){if(s.planAt===s.departAt)s.planAt=null;s.departAt=null;toast('改回還沒出門了')}
   if(act==='pain'){const f=b.dataset.f;s[f]=s[f]==null?5:Math.min(10,Math.max(1,s[f]+(+b.dataset.d)))}
   if(act==='wc'){const f=b.dataset.f;s[f]=!s[f]}
   if(act==='ripe'){const x=s.items[sel.i].sets[sel.j];x.ok=!x.ok;

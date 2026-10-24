@@ -200,6 +200,38 @@ details.menu summary span{font-size:12px;color:var(--muted)}
   box-shadow:0 6px 20px rgba(60,40,140,.25);max-width:calc(100% - 32px);font-size:14px}
 .update span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .update button{background:#fff;color:var(--lilac);border-radius:99px;padding:6px 14px;font-size:14px;white-space:nowrap}
+/* fruit tree: one branch per exercise, one fruit per set */
+.wcrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wcbtn{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:var(--bg);font-size:14px;text-align:left}
+.wcbtn .check{width:22px;height:22px;font-size:13px;flex:none}
+.wcbtn.ok{background:var(--lilac-soft)}
+.wcbtn.ok .check{background:var(--lilac);border-color:var(--lilac)}
+.tree{position:relative;display:flex;flex-direction:column;gap:14px;padding:22px 0 18px}
+.tree::before{content:"";position:absolute;left:81px;top:16px;bottom:10px;width:7px;border-radius:4px;background:var(--basket-line)}
+.tree::after{content:"";position:absolute;left:62px;top:0;width:46px;height:28px;border-radius:50%;background:#6CC66F;box-shadow:-14px 6px 0 -4px #5DBB63,14px 6px 0 -4px #5DBB63}
+.soil{position:absolute;left:52px;bottom:0;width:66px;height:12px;border-radius:50%;background:var(--basket-in);opacity:.8}
+.branch{display:grid;grid-template-columns:72px 1fr;align-items:start;gap:18px;position:relative}
+.bname{text-align:right;font-size:13px;line-height:1.25;overflow-wrap:anywhere;padding:6px 0 0}
+.bname small{display:block;font-size:10px;color:var(--muted)}
+.bname.sel{color:var(--lilac)}
+.twig{position:relative;display:flex;flex-wrap:wrap;gap:2px 4px;align-items:flex-start;min-width:0}
+.twig::before{content:"";position:absolute;left:-12px;right:6px;top:15px;height:3px;border-radius:2px;background:var(--basket-line);opacity:.75}
+.fr{position:relative;display:flex;flex-direction:column;align-items:center;width:42px;padding:0;border-radius:12px}
+.fr svg{width:32px;height:32px}
+.fr small{font-family:var(--num);font-size:10px;color:var(--muted);line-height:1.15;white-space:nowrap;background:var(--card);border-radius:4px;padding:0 2px}
+.fr.ripe small{color:var(--ink)}
+.fr.sel{background:var(--lilac-soft);outline:2px solid var(--lilac)}
+.fr.plus svg{opacity:.55}
+.harvest{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.harvest b{font-family:var(--num);color:var(--ink);font-weight:600}
+.setedit{background:var(--bg);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.setedit h5{margin:0;font-size:14px;font-weight:400;display:flex;justify-content:space-between;align-items:center}
+.setedit .two{grid-template-columns:1fr 1fr}
+.setedit .acts{display:flex;flex-wrap:wrap;gap:6px}
+.setedit .acts button{padding:7px 10px;border-radius:10px;background:var(--card);font-size:13px}
+.setedit .acts .danger{color:var(--warn)}
+.ripe-btn{padding:11px;border-radius:12px;background:var(--lilac);color:#fff;font-size:15px}
+.ripe-btn.undo{background:var(--card);color:var(--muted)}
 /* extras */
 .xlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .xitem{display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;background:var(--bg);border-radius:14px;padding:8px 10px}
@@ -337,10 +369,13 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2135';
+const APP_VERSION='2026.10.24-2141';
 const PARTS=[{k:'back',n:'背',sub:'背日',fruit:'grape',fn:'葡萄'},{k:'chest',n:'胸',sub:'胸・肩・三頭',fruit:'berry',fn:'草莓'},{k:'legs',n:'腿',sub:'腿日',fruit:'melon',fn:'西瓜'},{k:'period',n:'經期',sub:'輕重量，想練哪裡就練哪裡',fruit:'peach',fn:'桃子'}];
 /* fruits drawn in a 40×40 box centred on 0,0 */
 function fruit(t){
+  if(t==='bud') return `<path d="M0 -7 Q1 -12 3 -13" stroke="#7A5230" stroke-width="1.8" fill="none" stroke-linecap="round"/><ellipse cx="6" cy="-11" rx="5" ry="2.4" fill="#8CCB7A" transform="rotate(-20 6 -11)"/>
+    <circle cx="0" cy="2" r="8" fill="#C9E8B4" stroke="#86BF72" stroke-width="1.4"/><circle cx="-3" cy="-1" r="2" fill="#fff" opacity=".6"/>`;
+  if(t==='plus') return `<circle r="11" fill="none" stroke="#A39DC0" stroke-width="2" stroke-dasharray="4 3"/><path d="M-5 0 H5 M0 -5 V5" stroke="#A39DC0" stroke-width="2.4" stroke-linecap="round"/>`;
   if(t==='cherry') return `<path d="M-6 4 Q-3 -8 3 -15 M6 2 Q4 -8 3 -15" stroke="#4E8A3A" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="9" cy="-14" rx="6" ry="3" fill="#6CC66F" transform="rotate(-20 9 -14)"/>
     <circle cx="-6" cy="7" r="7" fill="#E8304A" stroke="#B51F36" stroke-width="1.3"/><circle cx="7" cy="5" r="7" fill="#E8304A" stroke="#B51F36" stroke-width="1.3"/>
     <circle cx="-8.5" cy="4.5" r="2" fill="#fff" opacity=".6"/><circle cx="4.5" cy="2.5" r="2" fill="#fff" opacity=".6"/>`;
@@ -377,13 +412,16 @@ const local={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){retu
 function blankLift(p){return{done:false,date:'',pre:null,post:null,planAt:null,departAt:null,warm:false,cool:false,items:[]}}
 const blankClimb=()=>({done:false,date:'',pre:null,post:null,planAt:null,departAt:null,warm:false,main:false,cool:false});
 function blankWeek(){const lifts={};PARTS.forEach(p=>lifts[p.k]=blankLift());return{lifts,climbs:[blankClimb(),blankClimb(),blankClimb()],extras:[]}}
-/* older rows kept sets as text like "4組" in `detail` */
+/* menu rows are uniform {name,sets:n,reps,kg} (older ones kept sets as text like "4組" in `detail`) */
 function normItem(m){const sets=Number.isFinite(m.sets)?m.sets:(parseInt(m.detail)||3);return{name:m.name||'',sets,reps:m.reps??'',kg:m.kg??''}}
-function itemsFromMenu(p,old){const prev={};(old||[]).forEach(i=>prev[i.name]=i);
-  return (menus?.[p]||[]).map(m=>{const d=normItem(m),o=prev[d.name];return o?Object.assign(d,{sets:o.sets??d.sets,reps:o.reps||d.reps,kg:o.kg||d.kg,ok:!!o.ok}):Object.assign(d,{ok:false})})}
+/* a session's exercise holds one row per set: {name, sets:[{reps,kg,ok}]} */
+function expand(m,ok=false){const d=normItem(m);return{name:d.name,sets:Array.from({length:d.sets},()=>({reps:String(d.reps),kg:String(d.kg),ok}))}}
+function normExercise(it){if(Array.isArray(it.sets))return{name:it.name||'',sets:it.sets.map(x=>({reps:String(x.reps??''),kg:String(x.kg??''),ok:!!x.ok}))};return expand(it,!!it.ok)}
+function itemsFromMenu(p,old){const prev={};(old||[]).forEach(i=>prev[i.name]=i);return (menus?.[p]||[]).map(m=>prev[m.name]||expand(m))}
+const exDone=it=>it.sets.length>0&&it.sets.every(x=>x.ok);
 function normalize(w){
   const b=blankWeek(); w=w?clone(w):b;
-  w.lifts=w.lifts||b.lifts; PARTS.forEach(p=>{const l=Object.assign(blankLift(),w.lifts[p.k]||{});l.items=l.items.map(i=>Object.assign(normItem(i),{ok:!!i.ok}));w.lifts[p.k]=l});
+  w.lifts=w.lifts||b.lifts; PARTS.forEach(p=>{const l=Object.assign(blankLift(),w.lifts[p.k]||{});l.items=l.items.map(normExercise);w.lifts[p.k]=l});
   w.extras=Array.isArray(w.extras)?w.extras:[];
   w.climbs=(w.climbs&&w.climbs.length===3)?w.climbs.map(c=>Object.assign(blankClimb(),c)):b.climbs; return w;
 }
@@ -404,9 +442,8 @@ function loadWeek(){
 }
 
 let pendingRender=false;
-let openItem=null;
+let sel=null;   // {i,j}: the picked fruit (j=-1 means the branch itself)
 const WC={warm:['暖身','5–10 分鐘動態伸展＋輕重量'],cool:['收操','伸展 5–10 分鐘，放鬆練到的部位']};
-const summary=it=>`${it.sets} 組${it.reps?' × '+esc(it.reps)+' 下':''} · ${it.kg?esc(it.kg)+' kg':'點編輯填重量'}`;
 document.addEventListener('focusout',()=>{if(pendingRender){pendingRender=false;setTimeout(render,0)}});
 
 /* ---------- cycle (四季分法) ---------- */
@@ -516,7 +553,7 @@ function renderToday(){
 let sheet=null;   // {t:'lift',k} | {t:'climb',i} | {t:'extra'}
 const CLIMB_STEPS=[['warm','暖身','慢走或輕鬆動 5 分鐘'],['main','有氧 30 分鐘','前 5–10 分鐘放慢，維持在能講話的速度'],['cool','收操','慢走＋伸展練到的部位']];
 function cur(){if(!week||!sheet)return null;return sheet.t==='lift'?week.lifts[sheet.k]:sheet.t==='climb'?week.climbs[sheet.i]:null}
-function openSheet(s){sheet=s;openItem=null;xdraft=s.t==='extra'?{type:'爬山',min:'',note:''}:null;
+function openSheet(s){sheet=s;sel=null;xdraft=s.t==='extra'?{type:'爬山',min:'',note:''}:null;
   $('#sheet').hidden=false;document.documentElement.style.overflow='hidden';renderSheet();$('#sheetBody').scrollTop=0;setTimeout(()=>$('#sheetClose')?.focus(),60)}
 function closeSheet(){sheet=null;xdraft=null;$('#sheet').hidden=true;document.documentElement.style.overflow=''}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet)closeSheet()});
@@ -542,28 +579,39 @@ function stageGo(s){
 function stageDo(s){
   let list;
   if(sheet.t==='lift'){
-    const k=sheet.k, P=PARTS.find(p=>p.k===k);
-    const ex=s.items.map((it,i)=>{const id=`${k}-${i}`,ed=openItem===`${k}:${i}`;return `
-      <li class="item${it.ok?' ok':''}"><div class="irow">
-        <button class="check" data-act="item" data-i="${i}" aria-pressed="${it.ok}" aria-label="完成 ${esc(it.name)}">${it.ok?'✓':''}</button>
-        <button class="nm" data-act="iedit" data-i="${i}" aria-expanded="${ed}"><b>${esc(it.name)||'未命名動作'}</b><span>${summary(it)}</span></button>
-        <button class="ed" data-act="iedit" data-i="${i}">${ed?'完成':'編輯'}</button></div>
-        ${ed?`<div class="iedit">
-          <div class="fld full"><label for="nm-${id}">動作名稱</label><input id="nm-${id}" data-fld="name" data-i="${i}" value="${esc(it.name)}"></div>
-          <div class="fld full"><label>組數</label><div class="row">
-            <button data-act="sets" data-i="${i}" data-d="-1" aria-label="少一組">−</button><output>${it.sets}</output>
-            <button data-act="sets" data-i="${i}" data-d="1" aria-label="多一組">＋</button></div></div>
-          <div class="fld"><label for="rp-${id}">每組次數</label><input id="rp-${id}" data-fld="reps" data-i="${i}" value="${esc(it.reps)}" placeholder="例：10" inputmode="numeric"></div>
-          <div class="fld"><label for="kg-${id}">重量 (kg)</label><input id="kg-${id}" data-fld="kg" data-i="${i}" value="${esc(it.kg)}" placeholder="例：40" inputmode="decimal"></div>
-          <button class="idel" data-act="idel" data-i="${i}">這次不做這個動作</button>
-        </div>`:''}
-      </li>`}).join('');
-    list=`<ul class="items">${chk(s.warm,'data-act="wc" data-f="warm"',WC.warm[0],WC.warm[1])}${ex||`<li class="empty">還沒有${P.n}日菜單，可以在下面加這次的動作</li>`}${chk(s.cool,'data-act="wc" data-f="cool"',WC.cool[0],WC.cool[1])}</ul>
-      <button class="addone" data-act="iadd">＋ 這次加一個動作</button>`;
+    const P=PARTS.find(p=>p.k===sheet.k);
+    const wc=(f)=>`<button class="wcbtn${s[f]?' ok':''}" data-act="wc" data-f="${f}" aria-pressed="${s[f]}"><span class="check">${s[f]?'✓':''}</span><span>${WC[f][0]}<br><small class="tip">${f==='warm'?'5–10 分鐘':'伸展放鬆'}</small></span></button>`;
+    const lbl=x=>x.reps||x.kg?`${x.reps||'?'}×${x.kg||'–'}`:'未填';
+    const branches=s.items.map((it,i)=>`<div class="branch">
+        <button class="bname${sel&&sel.i===i&&sel.j<0?' sel':''}" data-act="pick" data-i="${i}" data-j="-1">${esc(it.name)||'新動作'}<small>${it.sets.filter(x=>x.ok).length}/${it.sets.length} 組</small></button>
+        <div class="twig">${it.sets.map((x,j)=>`<button class="fr${x.ok?' ripe':''}${sel&&sel.i===i&&sel.j===j?' sel':''}" data-act="pick" data-i="${i}" data-j="${j}" aria-label="${esc(it.name)} 第 ${j+1} 組，${lbl(x)}${x.ok?'，完成':''}">${icon(x.ok?P.fruit:'bud')}<small>${lbl(x)}</small></button>`).join('')}
+          <button class="fr plus" data-act="addset" data-i="${i}" aria-label="${esc(it.name)} 加一組">${icon('plus')}<small>加一組</small></button></div>
+      </div>`).join('');
+    let ed='';
+    if(sel&&s.items[sel.i]){
+      const it=s.items[sel.i];
+      if(sel.j>=0&&it.sets[sel.j]){const x=it.sets[sel.j],id=`${sel.i}-${sel.j}`;
+        ed=`<div class="setedit"><h5>${esc(it.name)||'新動作'} · 第 ${sel.j+1} 組<button class="xbtn" style="width:28px;height:28px;font-size:12px" data-act="unpick" aria-label="收起">✕</button></h5>
+          <div class="two"><div class="fld"><label for="sr-${id}">次數</label><input id="sr-${id}" data-set="reps" value="${esc(x.reps)}" inputmode="numeric" placeholder="10"></div>
+          <div class="fld"><label for="sk-${id}">重量 (kg)</label><input id="sk-${id}" data-set="kg" value="${esc(x.kg)}" inputmode="decimal" placeholder="40"></div></div>
+          <button class="ripe-btn${x.ok?' undo':''}" data-act="ripe">${x.ok?'改回還沒做':'這組完成，採下來！'}</button>
+          <div class="acts"><button data-act="copyset">⧉ 複製成下一組</button><button class="danger" data-act="delset">刪掉這組</button></div></div>`;
+      }else{const id=`${sel.i}`;
+        ed=`<div class="setedit"><h5>這根樹枝<button class="xbtn" style="width:28px;height:28px;font-size:12px" data-act="unpick" aria-label="收起">✕</button></h5>
+          <div class="fld"><label for="en-${id}">動作名稱</label><input id="en-${id}" data-ex="name" value="${esc(it.name)}" placeholder="例：硬舉"></div>
+          <div class="acts"><button data-act="ripeall">全部組數一起採收</button><button class="danger" data-act="idel">這次不做這個動作</button></div></div>`;}
+    }
+    const all=s.items.flatMap(it=>it.sets), done=all.filter(x=>x.ok);
+    const vol=done.reduce((a,x)=>a+(parseFloat(x.reps)||0)*(parseFloat(x.kg)||0),0);
+    list=`<div class="wcrow">${wc('warm')}${wc('cool')}</div>
+      ${s.items.length?`<div class="tree">${branches}<span class="soil"></span></div>`:`<p class="empty">還沒有${P.n}日菜單，可以在下面種一根新樹枝</p>`}
+      ${ed}
+      <div class="harvest"><span>採收 <b>${done.length}/${all.length}</b> 顆</span><span>總重量 <b>${Math.round(vol).toLocaleString()}</b> kg</span></div>
+      <button class="addone" data-act="iadd">＋ 種一根新樹枝（新動作）</button>`;
   }else{
     list=`<ul class="items">${CLIMB_STEPS.map(([f,a,b])=>chk(s[f],`data-act="wc" data-f="${f}"`,a,b)).join('')}</ul>`;
   }
-  return `<section class="stage${s.departAt&&!s.done?' cur':''}"><h4><i>2</i>${sheet.t==='lift'?'今天的菜單<span class="tip" style="margin-left:auto">每組留 2–3 下就收</span>':'有氧'}</h4>${list}</section>`;
+  return `<section class="stage${s.departAt&&!s.done?' cur':''}"><h4><i>2</i>${sheet.t==='lift'?'今天的果樹<span class="tip" style="margin-left:auto">點果實改那一組</span>':'有氧'}</h4>${list}</section>`;
 }
 function stageEnd(s){
   return `<section class="stage"><h4><i>3</i>練完</h4>${stepper('post','實際有多痛苦？',s.post)}
@@ -639,8 +687,9 @@ document.addEventListener('click',e=>{
     else if(v==='climb'){const c=week.climbs;let n=c.findIndex(x=>!x.done&&(x.planAt||x.departAt));if(n<0)n=c.findIndex(x=>!x.done);openSheet({t:'climb',i:n<0?0:n})}
     else openSheet({t:'extra'});
     return}
-  if(act==='ctab'){sheet.i=i;openItem=null;renderSheet();$('#sheetBody').scrollTop=0;return}
-  if(act==='iedit'){const k=`${sheet.k}:${i}`;openItem=openItem===k?null:k;renderSheet();return}
+  if(act==='ctab'){sheet.i=i;sel=null;renderSheet();$('#sheetBody').scrollTop=0;return}
+  if(act==='pick'){const j=+b.dataset.j;sel=sel&&sel.i===i&&sel.j===j?null:{i,j};renderSheet();return}
+  if(act==='unpick'){sel=null;renderSheet();return}
   if(act==='xtype'){xdraft.type=b.dataset.t;renderSheet();if(b.dataset.t==='其他')$('#xcustom')?.focus();return}
   const s=cur(), now=new Date().toISOString();
   if(act==='plan'){s.planAt=now;toast('記下了，出門時再按「出門了！」')}
@@ -648,10 +697,14 @@ document.addEventListener('click',e=>{
   if(act==='unplan'){s.planAt=null;s.departAt=null}
   if(act==='pain'){const f=b.dataset.f;s[f]=s[f]==null?5:Math.min(10,Math.max(1,s[f]+(+b.dataset.d)))}
   if(act==='wc'){const f=b.dataset.f;s[f]=!s[f]}
-  if(act==='item'){const it=s.items[i];it.ok=!it.ok}
-  if(act==='sets'){const it=s.items[i];it.sets=Math.max(1,Math.min(10,it.sets+(+b.dataset.d)))}
-  if(act==='idel'){s.items.splice(i,1);openItem=null}
-  if(act==='iadd'){s.items.push({name:'',sets:3,reps:'',kg:'',ok:false});openItem=`${sheet.k}:${s.items.length-1}`;render();queueSave();document.getElementById(`nm-${sheet.k}-${s.items.length-1}`)?.focus();return}
+  if(act==='ripe'){const x=s.items[sel.i].sets[sel.j];x.ok=!x.ok;
+    if(x.ok){const it=s.items[sel.i],nx=it.sets.findIndex(y=>!y.ok);sel=nx>=0?{i:sel.i,j:nx}:(()=>{const ni=s.items.findIndex(e=>!exDone(e));return ni>=0?{i:ni,j:s.items[ni].sets.findIndex(y=>!y.ok)}:null})()}}
+  if(act==='ripeall'){s.items[sel.i].sets.forEach(x=>x.ok=true);sel=null}
+  if(act==='addset'){const it=s.items[i],last=it.sets[it.sets.length-1]||{reps:'',kg:''};it.sets.push({reps:last.reps,kg:last.kg,ok:false});sel={i,j:it.sets.length-1}}
+  if(act==='copyset'){const it=s.items[sel.i],x=it.sets[sel.j];it.sets.splice(sel.j+1,0,{reps:x.reps,kg:x.kg,ok:false});sel={i:sel.i,j:sel.j+1}}
+  if(act==='delset'){const it=s.items[sel.i];it.sets.splice(sel.j,1);sel=it.sets.length?{i:sel.i,j:Math.min(sel.j,it.sets.length-1)}:{i:sel.i,j:-1}}
+  if(act==='idel'){s.items.splice(sel.i,1);sel=null}
+  if(act==='iadd'){s.items.push({name:'',sets:[{reps:'',kg:'',ok:false}]});sel={i:s.items.length-1,j:-1};render();queueSave();document.getElementById(`en-${s.items.length-1}`)?.focus();return}
   if(act==='done'){s.done=!s.done;s.date=s.done?todayMD():'';
     if(s.done){toast(sheet.t==='lift'?`${PARTS.find(x=>x.k===sheet.k).n}日打卡！`:'有氧打卡！');closeSheet()}}
   if(act==='xsave'){const t=String(xdraft.type).trim();if(!t||t==='其他'){toast('先寫下是什麼運動');return}
@@ -661,10 +714,10 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>{
   const t=e.target;
-  if(t.dataset.fld&&cur()){const it=cur().items[+t.dataset.i];it[t.dataset.fld]=t.value;
-    const s=t.closest('.item')?.querySelector('.nm span');if(s)s.innerHTML=summary(it);
-    if(t.dataset.fld==='name'){const n=t.closest('.item')?.querySelector('.nm b');if(n)n.textContent=t.value||'未命名動作'}
-    queueSave()}
+  if(t.dataset.set&&cur()&&sel){const x=cur().items[sel.i].sets[sel.j];x[t.dataset.set]=t.value;
+    const f=document.querySelector(`.fr[data-i="${sel.i}"][data-j="${sel.j}"] small`);if(f)f.textContent=x.reps||x.kg?`${x.reps||'?'}×${x.kg||'–'}`:'未填';queueSave()}
+  if(t.dataset.ex&&cur()&&sel){const it=cur().items[sel.i];it.name=t.value;
+    const n=document.querySelector(`.bname[data-i="${sel.i}"]`);if(n)n.firstChild.textContent=t.value||'新動作';queueSave()}
   if(t.dataset.m){mdraft[mtab][+t.dataset.i][t.dataset.m]=t.value}
   if(t.dataset.x&&xdraft){xdraft[t.dataset.x]=t.value}
 });

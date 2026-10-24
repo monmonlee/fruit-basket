@@ -218,6 +218,35 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 .steps{display:flex;justify-content:center;gap:6px}
 .steps i{width:8px;height:8px;border-radius:50%;background:var(--line)}
 .steps i.on{background:var(--primary);width:20px;border-radius:4px}
+/* living basket: sleepy / running ghosts, weight, time of day */
+.seed .gb{position:relative}
+.seed.run .gb{animation:hop .45s ease-in-out infinite}
+.seed.run .gb::after{content:"";position:absolute;bottom:-7px;left:50%;width:30px;height:6px;margin-left:-15px;border-radius:50%;background:var(--muted);opacity:.25;animation:dust .45s ease-in-out infinite}
+@keyframes hop{50%{transform:translateY(-6px) rotate(-6deg)}}
+@keyframes dust{50%{transform:scaleX(.6);opacity:.12}}
+.seed.sleepy .gb{animation:nod 2.6s ease-in-out infinite}
+.seed.snore .gb{animation:snore 1.8s ease-in-out infinite}
+@keyframes nod{0%,100%{transform:rotate(0)}50%{transform:rotate(12deg) translateY(2px)}}
+@keyframes snore{0%,100%{transform:scale(1) rotate(10deg)}50%{transform:scale(1.08) rotate(14deg)}}
+.zz2{position:absolute;right:-2px;top:-10px;font-family:var(--num);font-weight:700;color:var(--winter);font-size:13px;pointer-events:none;animation:zzz 2s ease-in-out infinite}
+.seed.snore .zz2{font-size:15px}
+@keyframes zzz{0%{opacity:0;transform:translate(0,4px)}40%{opacity:1}100%{opacity:0;transform:translate(8px,-12px)}}
+#gecko{transition:translate .5s cubic-bezier(.3,1.5,.5,1)}
+.orchard::before{content:"";position:absolute;inset:8% -4% 0;border-radius:50%;background:radial-gradient(closest-side,var(--glow,transparent),transparent);opacity:.7;pointer-events:none}
+.orchard[data-time="morning"]{--glow:#FFF1C9}.orchard[data-time="day"]{--glow:#FFF8DC}.orchard[data-time="dusk"]{--glow:#FFD9C2}.orchard[data-time="night"]{--glow:#D9E2F7}
+:root[data-theme="dark"] .orchard[data-time]{--glow:#22324A}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .orchard[data-time]{--glow:#22324A}}
+.skyicon{position:absolute;right:2%;top:-2%;font-size:30px;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;pointer-events:none;animation:floaty 6s ease-in-out infinite}
+.star{position:absolute;font-size:12px;pointer-events:none;animation:twinkle 2.4s ease-in-out infinite;font-family:"Apple Color Emoji","Segoe UI Emoji",sans-serif}
+@keyframes floaty{50%{transform:translateY(-5px)}}
+@keyframes twinkle{50%{opacity:.25;transform:scale(.8)}}
+.linkish{color:var(--primary);font-size:12px;text-decoration:underline;padding:0}
+/* jam: rising fill and bubbles in this month's jar */
+.jamfill{animation:jamfill 1.1s cubic-bezier(.3,1,.4,1) both}
+@keyframes jamfill{from{transform:translateY(var(--h))}}
+.bub{animation:bub var(--t,2.4s) ease-in infinite;animation-delay:var(--d,0s);opacity:0}
+@keyframes bub{0%{transform:translateY(0);opacity:0}15%{opacity:.75}100%{transform:translateY(var(--rise));opacity:0}}
+@media (prefers-reduced-motion:reduce){.seed .gb,.seed .gb::after,.zz2,.skyicon,.star,.jamfill,.bub{animation:none}.bub{opacity:0}}
 /* cardio fruit ladder */
 .ladder{display:flex;align-items:center;justify-content:space-between;gap:2px;padding:6px 0}
 .rung{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;flex:1;opacity:.45;transition:opacity .2s,transform .2s}
@@ -436,7 +465,8 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
   <section class="hero">
     <div class="hero-head"><b id="todayTitle">今天要去摘哪一個？</b><span id="todaySub">點半透明的水果開始</span></div>
-    <div class="orchard">
+    <div class="orchard" id="orchard">
+    <div id="sky" aria-hidden="true"></div>
     <div id="ghosts"></div>
     <svg id="gecko" viewBox="0 22 240 124" role="img" aria-label="水果籃，每打卡一次就多一顆水果">
       <defs><clipPath id="inBasket"><path d="M0 0 H240 V78 H220 A100 40 0 0 1 20 78 H0 Z"/></clipPath></defs>
@@ -534,7 +564,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2358';
+const APP_VERSION='2026.10.25-0003';
 /* every person sets their own week: which lift days, how many cardio sessions, cycle on/off */
 const LIFT_SLOTS=[{k:'back',def:'背',fruit:'grape'},{k:'chest',def:'胸',fruit:'berry'},{k:'legs',def:'腿',fruit:'melon'}];
 const DEFAULT_SET={parts:{back:{on:true,name:'背'},chest:{on:true,name:'胸'},legs:{on:true,name:'腿'}},cardio:3,cardioName:'有氧',cycle:true,pain:true};
@@ -738,15 +768,24 @@ function renderHero(){
   /* unpicked fruit float above the basket; tap one to start it */
   const SLOTS=[[12,18],[37,12],[63,12],[88,18],[25,41],[75,41]];
   const gh=[];
-  liftOrder().forEach(p=>{const l=s.lifts[p.k];if(!l.done){const [c,t]=status(l);gh.push({s:'lift:'+p.k,f:p.fruit,n:p.n,c,t})}});
+  liftOrder().forEach(p=>{const l=s.lifts[p.k];if(!l.done){const [c,t]=status(l);gh.push({s:'lift:'+p.k,f:p.fruit,n:p.n,c,t,src:l})}});
   const cd=s.climbs.filter(c=>c.done).length, going=s.climbs.find(c=>!c.done&&(c.planAt||c.departAt));
-  if(cd<SET.cardio) gh.push({s:'climb',f:'banana',n:CN(),c:going?'going':'',t:going?status(going)[1]:`${cd}/${SET.cardio}`});
+  if(cd<SET.cardio) gh.push({s:'climb',f:'banana',n:CN(),c:going?'going':'',t:going?status(going)[1]:`${cd}/${SET.cardio}`,src:going});
   gh.push({s:'extra',f:'cherry',n:'額外',c:'',t:''});
+  /* planned but not left yet: the fruit gets drowsier the longer she waits; left: it runs */
+  gh.forEach(g=>{const x=g.src;if(!x||x.done)return;
+    if(x.departAt){g.c+=' run';return}
+    if(x.planAt){const m=mins(x.planAt,new Date().toISOString());if(m>=60){g.c+=' snore';g.z='Zz';g.t=`拖 ${Math.floor(m/60)} 小時`}else if(m>=30){g.c+=' sleepy';g.z='z';g.t=`拖 ${m} 分`}}});
   $('#ghosts').innerHTML=gh.slice(0,6).map((g,i)=>`<button class="seed ${g.c}" style="left:${SLOTS[i][0]}%;top:${SLOTS[i][1]}%" data-act="tile" data-s="${g.s}" aria-label="開始${g.n}${g.t?'，'+g.t:''}">
-    <span class="gb">${icon(g.f)}</span><small>${g.n}${g.t?' · '+g.t:''}</small></button>`).join('');
+    <span class="gb">${icon(g.f)}${g.z?`<span class="zz2">${g.z}</span>`:''}</span><small>${g.n}${g.t?' · '+g.t:''}</small></button>`).join('');
+  renderSky();
   $('#todayTitle').textContent=isThisWeek()?'今天要去摘哪一個？':'這週的籃子';
   $('#todaySub').textContent=placed.length?'籃子裡的點了可以修改':'點半透明的水果開始';
   const n=count(); $('#score').innerHTML=`${n}<small> / ${GOAL}</small>`; $('#bubble').textContent=message(n);
+  /* the fuller the basket, the lower it sits */
+  $('#gecko').style.translate=`0 ${(Math.min(1,n/GOAL)*8).toFixed(1)}px`;
+  const hr=new Date().getHours();
+  if(isThisWeek()&&(hr>=23||hr<5)&&n<GOAL)$('#todaySub').innerHTML='<button class="linkish" data-act="deck">這麼晚了還想運動？先問問小卡</button>';
   if(grew){const g=$('#gecko'), kind=placed[placed.length-1]?.t||'grape', full=n>=GOAL&&lastCount<GOAL;
     /* bring the basket into view first if she had scrolled away */
     const r=g.getBoundingClientRect(), off=r.bottom<0||r.top>innerHeight-80, wait=off?450:0;
@@ -754,9 +793,22 @@ function renderHero(){
     setTimeout(()=>{g.classList.remove('wiggle');void g.offsetWidth;g.classList.add('wiggle');
       g.querySelectorAll('.dropin').forEach(x=>{x.classList.remove('dropin');void x.getBBox();x.classList.add('dropin')});
       if(full)setTimeout(()=>{rain(['grape','berry','melon','peach','banana','cherry'],30);play('full');toast('整籃裝滿了！這週辛苦了')},350);
-      else setTimeout(()=>{const [cx,cy]=centerOf(g);burst(cx,cy-20,[kind,'#FFD54A','#7FD39A'],10,120);play('stamp')},300)},wait)}
+      else setTimeout(()=>{const [cx,cy]=centerOf(g);burst(cx,cy-20,[kind,'#FFD54A','#7FD39A'],10,120);play('stamp');
+        if(comboNext){comboNext=false;setTimeout(()=>{burst(cx,cy-40,[kind,'grape','banana','#FFD54A'],16,170);toast('Combo！今天雙倍收成');if(soundOn)[784,988,1175].forEach((f,i)=>tone(f,i*.07,.2,'square',.05))},380)}},300)},wait)}
   if(!sheet)lastCount=n;
 }
+/* morning sun, daytime sun, sunset, or moon and stars, depending on the clock */
+function renderSky(){
+  const h=new Date().getHours(), t=h>=5&&h<10?'morning':h<16&&h>=10?'day':h>=16&&h<19?'dusk':'night';
+  $('#orchard').dataset.time=t;
+  $('#sky').innerHTML=`<span class="skyicon">${{morning:'🌤️',day:'☀️',dusk:'🌇',night:'🌙'}[t]}</span>`+(t==='night'?
+    [[8,4,0],[20,14,.8],[70,6,1.5],[84,22,.4]].map(([x,y,d])=>`<span class="star" style="left:${x}%;top:${y}%;animation-delay:${d}s">✨</span>`).join(''):'');
+}
+let comboNext=false;
+/* a second session on the same day earns a combo */
+function sameDayCount(m){const w=week;if(!w||!m)return 0;
+  return PARTS.filter(p=>w.lifts[p.k]?.done&&w.lifts[p.k].date===m).length+w.climbs.filter(c=>c.done&&c.date===m).length+(w.extras||[]).filter(x=>x.date===m).length}
+setInterval(()=>{if(view==='week'&&!sheet&&document.visibilityState==='visible'&&week)renderHero()},60000);
 function renderNav(){
   const m=parseKey(wk), e=new Date(m); e.setDate(m.getDate()+6);
   $('#range').textContent=`${md(m)} – ${md(e)}`;
@@ -1061,7 +1113,7 @@ document.addEventListener('click',e=>{
     const menuNames=(menus?.[sheet.k]||[]).map(m=>m.name), here=s.items.filter(e=>e.name.trim());
     const added=here.filter(e=>!menuNames.includes(e.name)).map(e=>e.name), removed=menuNames.filter(n=>!here.some(e=>e.name===n));
     if(added.length||removed.length){
-      s.done=true;s.date=md(parseKey(pickDay));
+      s.done=true;s.date=md(parseKey(pickDay));if(sameDayCount(s.date)>1)comboNext=true;
       sheet.diff={added,removed,pick:Object.fromEntries([...added,...removed].map(n=>[n,true]))};
       render();queueSave();$('#sheetBody').scrollTop=0;return}
   }
@@ -1072,10 +1124,10 @@ document.addEventListener('click',e=>{
       menus[k]=cur0;local.set('menus',menus);mdraft=null;toast('固定菜單更新了，下次就會照這樣')}
     else toast(`${PARTS.find(x=>x.k===sheet.k).n}日打卡！`);
     closeSheet();render();return}
-  if(act==='done'){s.done=!s.done;s.date=s.done?md(parseKey(pickDay)):'';
+  if(act==='done'){s.done=!s.done;s.date=s.done?md(parseKey(pickDay)):'';if(s.done&&sameDayCount(s.date)>1)comboNext=true;
     if(s.done){toast(`${sheet.t==='lift'?PARTS.find(x=>x.k===sheet.k).n+'日':CN()}打卡！${sheet.t==='climb'&&cardioTier(s)>=0?'摘到'+TIERS[cardioTier(s)].n+'！':''}${pickDay!==keyOf(new Date())?'（算在 '+md(parseKey(pickDay))+'）':''}`);closeSheet()}}
   if(act==='xsave'){const t=String(xdraft.type).trim();if(!t||t==='其他'){toast('先寫下是什麼運動');return}
-    week.extras.push({type:t,min:String(xdraft.min).trim(),note:String(xdraft.note).trim(),date:md(parseKey(pickDay))});closeSheet();toast('櫻桃 +1！')}
+    week.extras.push({type:t,min:String(xdraft.min).trim(),note:String(xdraft.note).trim(),date:md(parseKey(pickDay))});if(sameDayCount(md(parseKey(pickDay)))>1)comboNext=true;closeSheet();toast('櫻桃 +1！')}
   if(act==='xdel'){week.extras.splice(i,1)}
   render(); queueSave();
 });
@@ -1230,11 +1282,12 @@ function monthTally(y,mo){
   const top=Object.entries(by).sort((a,b)=>b[1]-a[1])[0];
   return{total,fill:Math.min(1,total/(GOAL*last.getDate()/7)),color:top?JAM[top[0]]:null,top:top?.[0]};
 }
-function jarSVG(t,id,label){
+function jarSVG(t,id,label,live){
   const h=t.fill*46, y=78-h;
+  const bubs=live&&h>8?[14,24,34,44].map((x,i)=>`<circle class="bub" cx="${x}" cy="84" r="${1.4+i%2}" fill="#fff" style="--rise:${-(h-4)}px;--d:${i*.55}s;--t:${2+i%3*.5}s"/>`).join(''):'';
   return `<svg viewBox="0 0 60 92" aria-hidden="true"><defs><clipPath id="jc-${id}"><path d="M10 26 Q8 26 8 32 V80 Q8 86 14 86 H46 Q52 86 52 80 V32 Q52 26 50 26 Z"/></clipPath></defs>
     <path d="M10 26 Q8 26 8 32 V80 Q8 86 14 86 H46 Q52 86 52 80 V32 Q52 26 50 26 Z" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
-    ${t.color?`<g clip-path="url(#jc-${id})"><rect x="0" y="${y}" width="60" height="${h+10}" fill="${t.color}"/><path d="M0 ${y} Q15 ${y-3} 30 ${y} T60 ${y}" fill="${t.color}"/><rect x="0" y="${y+2}" width="60" height="4" fill="#fff" opacity=".18"/></g>`:''}
+    ${t.color?`<g clip-path="url(#jc-${id})"><g class="${live?'jamfill':''}" style="--h:${h}px"><rect x="0" y="${y}" width="60" height="${h+10}" fill="${t.color}"/><path d="M0 ${y} Q15 ${y-3} 30 ${y} T60 ${y}" fill="${t.color}"/><rect x="0" y="${y+2}" width="60" height="4" fill="#fff" opacity=".18"/></g>${bubs}</g>`:''}
     <path d="M14 34 V70" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".45"/>
     <rect x="12" y="18" width="36" height="9" rx="2" fill="var(--basket-line)"/>
     <path d="M6 18 Q30 6 54 18 L50 24 Q30 16 10 24 Z" fill="${t.color||'var(--muted)'}" opacity=".9"/>
@@ -1247,7 +1300,7 @@ function renderShelf(){
   const cells=months.map((d,i)=>{const t=monthTally(d.getFullYear(),d.getMonth()),cur=i===months.length-1;
     if(!t.total&&!cur)return '';
     return `<button class="jar${cur?' cur':''}" data-act="jarmonth" data-y="${d.getFullYear()}" data-m="${d.getMonth()}" aria-label="${d.getMonth()+1} 月果醬，完成 ${t.total} 次">
-      ${jarSVG(t,`${d.getFullYear()}${d.getMonth()}`,`${d.getMonth()+1}月`)}<small>${cur?'熬煮中':`${t.total} 次`}</small></button>`}).join('');
+      ${jarSVG(t,`${d.getFullYear()}${d.getMonth()}`,`${d.getMonth()+1}月`,cur)}<small>${cur?'熬煮中':`${t.total} 次`}</small></button>`}).join('');
   $('#shelf').innerHTML=cells;
   const sh=$('#shelf');sh.scrollLeft=sh.scrollWidth;
 }

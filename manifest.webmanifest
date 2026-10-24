@@ -1,7 +1,7 @@
 {
   "name": "水果籃運動週卡",
   "short_name": "水果籃",
-  "description": "每週重訓加爬坡的打卡卡片，每打卡一次就在籃子裡多放一顆水果。",
+  "description": "每週重訓加有氧的打卡卡片，每打卡一次就在籃子裡多放一顆水果。",
   "lang": "zh-Hant",
   "start_url": "./",
   "scope": "./",

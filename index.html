@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>水果籃運動週卡</title>
-<meta name="description" content="每週重訓加爬坡的打卡卡片，每打卡一次就在籃子裡多放一顆水果。">
+<meta name="description" content="每週重訓加有氧的打卡卡片，每打卡一次就在籃子裡多放一顆水果。">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" sizes="192x192" href="icons/apple-touch-icon.png?v=2">
@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Fredoka:wght@500;600;700&display=swap">
 <style>
-/* Layout: one narrow phone column. Gecko hero on top, then lift cards, climb stamps, menu editor. */
+/* Layout: one narrow phone column. "Today" tiles first, basket, season card, stats; every session opens the same bottom sheet. */
 :root{
   --bg:#F2F4FA; --card:#FFFFFF; --ink:#2A2540; --muted:#7A7594; --line:#E3E1EF;
   --lilac:#8C7BF0; --lilac-soft:#ECE8FF; --mint:#3FBF97; --mint-soft:#DDF5EC;
@@ -78,22 +78,41 @@ h2 span{font-size:12px;color:var(--muted)}
 .sec{display:flex;flex-direction:column;gap:10px}
 .tip{font-size:13px;color:var(--muted);margin:0}
 
-/* lift card */
-.lift{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.lift.done{border-color:var(--lilac)}
-.lift-head{display:flex;align-items:center;gap:12px;padding:12px 14px;width:100%;text-align:left}
-.badge{width:44px;height:44px;border-radius:14px;background:var(--lilac-soft);color:var(--lilac);display:grid;place-items:center;font-size:20px;flex:none}
-.badge svg{width:30px;height:30px;opacity:.35;transition:opacity .2s}
-.lift.done .badge{background:var(--lilac-soft)}
-.lift.done .badge svg{opacity:1}
-.lift-title{flex:1;min-width:0}
-.lift-title b{font-weight:400;font-size:16px;display:block}
-.lift-title span{font-size:12px;color:var(--muted)}
-.pill{font-size:12px;padding:3px 10px;border-radius:99px;background:var(--bg);color:var(--muted);white-space:nowrap;font-family:var(--num);font-weight:500}
-.lift.done .pill{background:var(--lilac);color:#fff}
-.chev{color:var(--muted);transition:transform .2s}
-.lift.open .chev{transform:rotate(90deg)}
-.lift-body{padding:0 14px 14px;display:flex;flex-direction:column;gap:12px}
+/* today tiles */
+.today{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0}
+.tile svg{width:42px;height:42px}
+.tile b{font-weight:400;font-size:15px}
+.tile small{font-size:11px;color:var(--muted);font-family:var(--num);font-weight:500;white-space:nowrap}
+.tile.done{border-color:var(--lilac);background:var(--lilac-soft)}
+.tile.done small{color:var(--lilac)}
+.tile.going{border-color:var(--peach);border-style:dashed}
+.tile.going small{color:var(--peach)}
+.tile:active{transform:scale(.97)}
+
+/* bottom sheet: the one place every session is logged */
+.sheet-wrap{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;justify-content:flex-end}
+.backdrop{position:absolute;inset:0;background:rgba(20,16,40,.45);border:0;width:100%}
+.sheet{position:relative;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;max-height:88dvh;display:flex;flex-direction:column;width:100%;max-width:520px;margin:0 auto;box-shadow:0 -8px 30px rgba(0,0,0,.2);animation:up .22s ease}
+@keyframes up{from{transform:translateY(40px);opacity:.6}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:8px auto 0;flex:none}
+.sheet header{display:flex;align-items:center;gap:10px;padding:8px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));flex:none}
+.sheet header svg{width:38px;height:38px;flex:none}
+.sheet header h3{margin:0;font-size:18px;font-weight:400;flex:1;min-width:0}
+.sheet header h3 small{display:block;font-size:12px;color:var(--muted)}
+.xbtn{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--line);font-size:15px;flex:none}
+.sheet-body{overflow-y:auto;padding:0 max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px;overscroll-behavior:contain}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.stage h4{margin:0;font-size:14px;font-weight:400;display:flex;align-items:center;gap:8px}
+.stage h4 i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--lilac-soft);color:var(--lilac);display:grid;place-items:center;font-family:var(--num);font-weight:600;font-size:13px}
+.stage.cur{border-color:var(--lilac)}
+.stage.cur h4 i{background:var(--lilac);color:#fff}
+.timeline{margin:0;font-size:13px;color:var(--muted)}
+.timeline b{color:var(--ink);font-weight:400}
+.btnrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.go-btn{padding:12px;border-radius:14px;background:var(--peach);color:#fff;font-size:16px}
+.ghost{padding:10px;border-radius:12px;background:var(--bg);font-size:14px}
 .items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .item{display:flex;flex-direction:column;gap:8px;padding:8px 10px;border-radius:12px;background:var(--bg)}
 .item.ok{background:var(--lilac-soft)}
@@ -111,9 +130,6 @@ h2 span{font-size:12px;color:var(--muted)}
 .fld .row output{font-family:var(--num);font-weight:600;font-size:17px}
 .idel{grid-column:1/-1;justify-self:start;font-size:13px;color:var(--warn);padding:4px 0}
 .addone{padding:9px;border-radius:12px;border:1.5px dashed var(--line);color:var(--muted);font-size:14px}
-.climb-panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
-.climb-panel h3{margin:0;font-size:15px;font-weight:400}
-.climb.sel{outline:3px solid var(--mint);outline-offset:2px}
 .check{width:26px;height:26px;border-radius:8px;border:2px solid var(--line);background:var(--card);display:grid;place-items:center;color:#fff;font-size:15px}
 .item.ok .check{background:var(--lilac);border-color:var(--lilac)}
 .item .nm{min-width:0}
@@ -128,16 +144,7 @@ h2 span{font-size:12px;color:var(--muted)}
 .step button.pm{width:30px;height:30px;border-radius:50%;background:var(--card);border:1px solid var(--line);font-family:var(--num);font-size:18px;line-height:1}
 .step output{font-family:var(--num);font-weight:600;font-size:20px;min-width:26px;text-align:center;font-variant-numeric:tabular-nums}
 .stamp-btn{width:100%;padding:12px;border-radius:14px;background:var(--lilac);color:#fff;font-size:16px}
-.lift.done .stamp-btn{background:var(--bg);color:var(--muted)}
-
-/* climbs */
-.climbs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.climb{aspect-ratio:1;max-width:100%;border-radius:50%;border:2.5px dashed var(--line);background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--muted)}
-.climb .min{font-family:var(--num);font-weight:600;font-size:22px;line-height:1}
-.climb .lbl{font-size:12px}
-.climb.done{border:2.5px solid var(--mint);background:var(--mint-soft);color:var(--ink)}
-.climb.done .min{color:var(--mint)}
-.climb svg{width:34px;height:34px}
+.stamp-btn.undo{background:var(--bg);color:var(--muted)}
 
 /* menu editor */
 details.menu{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:4px 14px}
@@ -157,7 +164,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 .mactions button{flex:1;padding:10px;border-radius:12px;background:var(--bg)}
 .mactions .save{background:var(--lilac);color:#fff}
 
-.stats{display:flex;gap:10px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px}
 .stat span{font-size:12px;color:var(--muted);display:block}
 .stat b{font-family:var(--num);font-weight:600;font-size:22px;font-variant-numeric:tabular-nums}
@@ -172,7 +179,6 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 /* month calendar */
 .mstats{display:grid;grid-template-columns:repeat(12,1fr);gap:8px}
 .mstats .stat{grid-column:span 3}
-.mstats .stat.w4{grid-column:span 4}
 .cal{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 10px}
 .dow,.wrow{display:grid;grid-template-columns:repeat(7,1fr) 30px;gap:4px}
 .dow{font-size:12px;color:var(--muted);text-align:center;margin-bottom:6px}
@@ -196,16 +202,15 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 .update button{background:#fff;color:var(--lilac);border-radius:99px;padding:6px 14px;font-size:14px;white-space:nowrap}
 /* extras */
 .xlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.xitem{display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 10px}
+.xitem{display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;background:var(--bg);border-radius:14px;padding:8px 10px}
 .xitem svg{width:30px;height:30px}
 .xitem b{font-weight:400;display:block}
 .xitem span{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
 .xitem button{color:var(--warn);font-size:15px;padding:4px 6px}
-.xform{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips button{padding:6px 12px;border-radius:99px;background:var(--bg);font-size:14px}
 .chips button[aria-pressed="true"]{background:var(--lilac);color:#fff}
-.xform .two{display:grid;grid-template-columns:110px 1fr;gap:8px}
+.two{display:grid;grid-template-columns:110px 1fr;gap:8px}
 /* cycle */
 .cycle{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
 .cycle-top{display:flex;align-items:center;gap:10px}
@@ -256,6 +261,11 @@ details.menu summary span{font-size:12px;color:var(--muted)}
     <button id="next" aria-label="下一週">›</button>
   </nav>
 
+  <section class="sec">
+    <h2><span id="todayTitle" style="font-size:18px;color:var(--ink)">今天要做什麼？</span><span id="todaySub"></span></h2>
+    <div class="today" id="today"></div>
+  </section>
+
   <section class="hero" aria-live="polite">
     <svg id="gecko" viewBox="0 22 240 124" role="img" aria-label="水果籃，每打卡一次就多一顆水果">
       <defs><clipPath id="inBasket"><path d="M0 0 H240 V78 H220 A100 40 0 0 1 20 78 H0 Z"/></clipPath></defs>
@@ -287,25 +297,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
   <section class="cycle" id="cycle" aria-label="月經週期"></section>
 
   <section class="sec">
-    <h2>重訓 <span>每組留 2–3 下就收</span></h2>
-    <div id="lifts"></div>
-    <p class="tip">很抗拒的那天：熱身完做第一個動作，就可以打卡。</p>
-  </section>
-
-  <section class="sec">
-    <h2>爬坡 30 分鐘 <span>為登山做準備</span></h2>
-    <div class="climbs" id="climbs"></div>
-    <div id="climbPanel"></div>
-  </section>
-
-  <section class="sec">
-    <h2>額外運動 <span>每一筆抵一次，放一顆櫻桃</span></h2>
-    <ul class="xlist" id="xlist"></ul>
-    <div id="xform"></div>
-  </section>
-
-  <section class="sec">
-    <h2>預估 vs 實際 <span>這週的痛苦分數平均</span></h2>
+    <h2>預估 vs 實際 <span>這週的平均</span></h2>
     <div class="stats" id="stats"></div>
   </section>
 
@@ -329,6 +321,15 @@ details.menu summary span{font-size:12px;color:var(--muted)}
   <p class="note" id="note">讀取中…</p>
 </div>
 
+<div class="sheet-wrap" id="sheet" hidden>
+  <button class="backdrop" data-act="close" aria-label="關閉" tabindex="-1"></button>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="grab" aria-hidden="true"></div>
+    <header><span id="sheetIcon"></span><h3 id="sheetTitle"></h3><button class="xbtn" id="sheetClose" data-act="close" aria-label="關閉">✕</button></header>
+    <div class="sheet-body" id="sheetBody"></div>
+  </div>
+</div>
+
 <div class="update" id="updateBar" role="status" hidden>
   <span id="updateText">有新版本</span>
   <button id="updateBtn">點我更新</button>
@@ -336,7 +337,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2128';
+const APP_VERSION='2026.10.24-2135';
 const PARTS=[{k:'back',n:'背',sub:'背日',fruit:'grape',fn:'葡萄'},{k:'chest',n:'胸',sub:'胸・肩・三頭',fruit:'berry',fn:'草莓'},{k:'legs',n:'腿',sub:'腿日',fruit:'melon',fn:'西瓜'},{k:'period',n:'經期',sub:'輕重量，想練哪裡就練哪裡',fruit:'peach',fn:'桃子'}];
 /* fruits drawn in a 40×40 box centred on 0,0 */
 function fruit(t){
@@ -367,13 +368,14 @@ const md=d=>`${d.getMonth()+1}/${d.getDate()}`;
 const todayMD=()=>md(new Date());
 const parseKey=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
 
-let db=null, menus=null, wk=keyOf(monday(new Date())), week=null, unsubWeek=null, open=new Set(), mtab='back', mdraft=null, offline=false, lastCount=-1;
+let menus=null, wk=keyOf(monday(new Date())), week=null, mtab='back', mdraft=null, lastCount=-1;
 
-/* storage: db when available, this device otherwise */
+/* storage: this device's browser */
 const local={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 
-function blankLift(p){return{done:false,date:'',pre:null,post:null,warm:false,cool:false,items:[]}}
-const blankClimb=()=>({done:false,date:'',warm:false,main:false,cool:false});
+/* planAt／departAt are ISO times: when she decided to go, and when she actually left */
+function blankLift(p){return{done:false,date:'',pre:null,post:null,planAt:null,departAt:null,warm:false,cool:false,items:[]}}
+const blankClimb=()=>({done:false,date:'',pre:null,post:null,planAt:null,departAt:null,warm:false,main:false,cool:false});
 function blankWeek(){const lifts={};PARTS.forEach(p=>lifts[p.k]=blankLift());return{lifts,climbs:[blankClimb(),blankClimb(),blankClimb()],extras:[]}}
 /* older rows kept sets as text like "4組" in `detail` */
 function normItem(m){const sets=Number.isFinite(m.sets)?m.sets:(parseInt(m.detail)||3);return{name:m.name||'',sets,reps:m.reps??'',kg:m.kg??''}}
@@ -393,25 +395,16 @@ function queueSave(){dirty=true;clearTimeout(timer);timer=setTimeout(flush,500)}
 async function flush(){
   clearTimeout(timer); if(saving||!dirty) return;
   saving=true; dirty=false; const key=wk, data=clone(week);
-  try{ if(db) await db.doc('weeks/'+key).set(data); else {local.set('week:'+key,data);allWeeks[key]=data} }
-  catch(e){ toast(e?.code==='invalid_argument'?'你沒有編輯權限，這次沒存到':'沒存到，請檢查網路再試一次'); }
+  local.set('week:'+key,data); allWeeks[key]=data;
   saving=false; if(dirty) flush();
 }
 
 function loadWeek(){
-  if(unsubWeek){unsubWeek();unsubWeek=null}
-  week=null; render();
-  if(db){
-    unsubWeek=db.doc('weeks/'+wk).onSnapshot(s=>{
-      if(saving||dirty) return;
-      week=normalize(s.exists?s.data():null); fillEmptyLifts(); safeRender();
-    },e=>{toast('連線中斷，重新整理頁面就會恢復')});
-  }else{ week=normalize(local.get('week:'+wk)); fillEmptyLifts(); render(); }
+  week=normalize(local.get('week:'+wk)); fillEmptyLifts(); render();
 }
 
 let pendingRender=false;
-function safeRender(){const a=document.activeElement;if(a&&a.tagName==='INPUT'){pendingRender=true;return}render()}
-let openItem=null, selClimb=null;
+let openItem=null;
 const WC={warm:['暖身','5–10 分鐘動態伸展＋輕重量'],cool:['收操','伸展 5–10 分鐘，放鬆練到的部位']};
 const summary=it=>`${it.sets} 組${it.reps?' × '+esc(it.reps)+' 下':''} · ${it.kg?esc(it.kg)+' kg':'點編輯填重量'}`;
 document.addEventListener('focusout',()=>{if(pendingRender){pendingRender=false;setTimeout(render,0)}});
@@ -493,71 +486,124 @@ function renderNav(){
   const cur=keyOf(monday(new Date())), t=$('#tag');
   t.textContent= wk===cur?'本週':(wk<cur?'過去的週':'未來的週'); t.className='tag'+(wk===cur?' now':'');
 }
-function stepper(p,field,label,val){
+function stepper(f,label,val){
   return `<div class="step"><label>${label}</label><div class="row">
-    <button class="pm" data-act="pain" data-p="${p}" data-f="${field}" data-d="-1" aria-label="${label}減一">−</button>
+    <button class="pm" data-act="pain" data-f="${f}" data-d="-1" aria-label="${label}減一">−</button>
     <output>${val==null?'–':val}</output>
-    <button class="pm" data-act="pain" data-p="${p}" data-f="${field}" data-d="1" aria-label="${label}加一">＋</button></div></div>`;
+    <button class="pm" data-act="pain" data-f="${f}" data-d="1" aria-label="${label}加一">＋</button></div></div>`;
 }
-function renderLifts(){
-  if(!week){$('#lifts').innerHTML='';return}
-  $('#lifts').style.cssText='display:flex;flex-direction:column;gap:10px';
-  const ph=wk===keyOf(monday(new Date()))?phaseOn(new Date()):null;
-  const order=ph&&ph.season==='winter'?[PARTS[3],...PARTS.slice(0,3)]:PARTS;
-  $('#lifts').innerHTML=order.map(p=>{
-    const l=week.lifts[p.k], isOpen=open.has(p.k), okN=l.items.filter(i=>i.ok).length;
-    const wc=f=>`<li class="item wc${l[f]?' ok':''}"><div class="irow">
-        <button class="check" data-act="wc" data-p="${p.k}" data-f="${f}" aria-pressed="${l[f]}" aria-label="完成${WC[f][0]}">${l[f]?'✓':''}</button>
-        <div class="nm"><b>${WC[f][0]}</b><span>${WC[f][1]}</span></div><span></span></div></li>`;
-    const ex=l.items.map((it,i)=>{const id=`${p.k}-${i}`,ed=openItem===`${p.k}:${i}`;return `
+const hm=iso=>{const d=new Date(iso);return `${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const mins=(a,b)=>Math.max(0,Math.round((new Date(b)-new Date(a))/60000));
+const dur=m=>m>=60?`${Math.floor(m/60)} 小時${m%60?` ${m%60} 分`:''}`:`${m} 分鐘`;
+const isThisWeek=()=>wk===keyOf(monday(new Date()));
+
+/* ---------- today tiles ---------- */
+function liftOrder(){const ph=isThisWeek()?phaseOn(new Date()):null;return ph&&ph.season==='winter'?[PARTS[3],...PARTS.slice(0,3)]:PARTS}
+const tile=(sel,f,n,cls,txt)=>`<button class="tile ${cls}" data-act="tile" data-s="${sel}" aria-label="${n}${txt?'，'+txt:''}">${icon(f)}<b>${n}</b><small>${txt||'&nbsp;'}</small></button>`;
+function status(s){return s.done?['done','✓ '+s.date]:s.departAt?['going','出門中']:s.planAt?['going','打算去']:['','']}
+function renderToday(){
+  $('#todayTitle').textContent=isThisWeek()?'今天要做什麼？':'這週的運動';
+  $('#todaySub').textContent=isThisWeek()?'點一下開始記錄':'';
+  const w=week||blankWeek();
+  const tiles=liftOrder().map(p=>{const [c,t]=status(w.lifts[p.k]);return tile('lift:'+p.k,p.fruit,p.n,c,t)});
+  const cd=w.climbs.filter(c=>c.done).length, going=w.climbs.find(c=>!c.done&&(c.planAt||c.departAt));
+  tiles.push(tile('climb','banana','有氧',cd===3?'done':going?'going':'',going?status(going)[1]:`${cd}/3`));
+  const xn=w.extras.length; tiles.push(tile('extra','cherry','額外',xn?'done':'',xn?`+${xn}`:'記一筆'));
+  $('#today').innerHTML=tiles.join('');
+}
+
+/* ---------- the session sheet ---------- */
+let sheet=null;   // {t:'lift',k} | {t:'climb',i} | {t:'extra'}
+const CLIMB_STEPS=[['warm','暖身','慢走或輕鬆動 5 分鐘'],['main','有氧 30 分鐘','前 5–10 分鐘放慢，維持在能講話的速度'],['cool','收操','慢走＋伸展練到的部位']];
+function cur(){if(!week||!sheet)return null;return sheet.t==='lift'?week.lifts[sheet.k]:sheet.t==='climb'?week.climbs[sheet.i]:null}
+function openSheet(s){sheet=s;openItem=null;xdraft=s.t==='extra'?{type:'爬山',min:'',note:''}:null;
+  $('#sheet').hidden=false;document.documentElement.style.overflow='hidden';renderSheet();$('#sheetBody').scrollTop=0;setTimeout(()=>$('#sheetClose')?.focus(),60)}
+function closeSheet(){sheet=null;xdraft=null;$('#sheet').hidden=true;document.documentElement.style.overflow=''}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet)closeSheet()});
+const chk=(on,attrs,title,sub)=>`<li class="item wc${on?' ok':''}"><div class="irow"><button class="check" ${attrs} aria-pressed="${on}" aria-label="完成${title}">${on?'✓':''}</button>
+  <div class="nm"><b>${title}</b><span>${sub}</span></div><span></span></div></li>`;
+function stageGo(s){
+  let inner;
+  if(s.done){
+    const t=[];if(s.planAt)t.push(`${hm(s.planAt)} 打算去`);if(s.departAt)t.push(`${hm(s.departAt)} 出門`);
+    inner=`<p class="timeline">${t.length?t.join(' → '):'這次沒有記出門時間'}${s.planAt&&s.departAt?` · 拖了 <b>${dur(mins(s.planAt,s.departAt))}</b>`:''}</p>${stepper('pre','出門前預估痛苦',s.pre)}`;
+  }else if(s.departAt){
+    inner=`<p class="timeline"><b>${hm(s.departAt)} 出門了</b>${s.planAt?` · 從打算到出門 ${dur(mins(s.planAt,s.departAt))}`:''}</p>`;
+  }else if(s.planAt){
+    inner=`<p class="timeline"><b>${hm(s.planAt)} 打算去</b> · 到現在 ${dur(mins(s.planAt,new Date().toISOString()))}</p>${stepper('pre','想到要去，覺得會多痛苦？',s.pre)}
+      <button class="go-btn" data-act="depart">出門了！</button><button class="ghost" data-act="unplan">今天先不去了</button>`;
+  }else{
+    inner=`<p class="timeline">決定要去的時候先按「今天打算去」，出門時再按一次，app 會算出拖了多久。</p>${stepper('pre','想到要去，覺得會多痛苦？',s.pre)}
+      <div class="btnrow"><button class="ghost" data-act="plan">今天打算去</button><button class="go-btn" style="padding:10px;font-size:15px" data-act="depart">已經出門了</button></div>
+      <p class="tip">很抗拒的話：熱身完做第一個動作，就可以打卡。</p>`;
+  }
+  return `<section class="stage${!s.done&&!s.departAt?' cur':''}"><h4><i>1</i>出門前</h4>${inner}</section>`;
+}
+function stageDo(s){
+  let list;
+  if(sheet.t==='lift'){
+    const k=sheet.k, P=PARTS.find(p=>p.k===k);
+    const ex=s.items.map((it,i)=>{const id=`${k}-${i}`,ed=openItem===`${k}:${i}`;return `
       <li class="item${it.ok?' ok':''}"><div class="irow">
-        <button class="check" data-act="item" data-p="${p.k}" data-i="${i}" aria-pressed="${it.ok}" aria-label="完成 ${esc(it.name)}">${it.ok?'✓':''}</button>
-        <button class="nm" data-act="iedit" data-p="${p.k}" data-i="${i}" aria-expanded="${ed}"><b>${esc(it.name)||'未命名動作'}</b><span>${summary(it)}</span></button>
-        <button class="ed" data-act="iedit" data-p="${p.k}" data-i="${i}">${ed?'完成':'編輯'}</button></div>
+        <button class="check" data-act="item" data-i="${i}" aria-pressed="${it.ok}" aria-label="完成 ${esc(it.name)}">${it.ok?'✓':''}</button>
+        <button class="nm" data-act="iedit" data-i="${i}" aria-expanded="${ed}"><b>${esc(it.name)||'未命名動作'}</b><span>${summary(it)}</span></button>
+        <button class="ed" data-act="iedit" data-i="${i}">${ed?'完成':'編輯'}</button></div>
         ${ed?`<div class="iedit">
-          <div class="fld full"><label for="nm-${id}">動作名稱</label><input id="nm-${id}" data-fld="name" data-p="${p.k}" data-i="${i}" value="${esc(it.name)}"></div>
+          <div class="fld full"><label for="nm-${id}">動作名稱</label><input id="nm-${id}" data-fld="name" data-i="${i}" value="${esc(it.name)}"></div>
           <div class="fld full"><label>組數</label><div class="row">
-            <button data-act="sets" data-p="${p.k}" data-i="${i}" data-d="-1" aria-label="少一組">−</button><output>${it.sets}</output>
-            <button data-act="sets" data-p="${p.k}" data-i="${i}" data-d="1" aria-label="多一組">＋</button></div></div>
-          <div class="fld"><label for="rp-${id}">每組次數</label><input id="rp-${id}" data-fld="reps" data-p="${p.k}" data-i="${i}" value="${esc(it.reps)}" placeholder="例：10" inputmode="numeric"></div>
-          <div class="fld"><label for="kg-${id}">重量 (kg)</label><input id="kg-${id}" data-fld="kg" data-p="${p.k}" data-i="${i}" value="${esc(it.kg)}" placeholder="例：40" inputmode="decimal"></div>
-          <button class="idel" data-act="idel" data-p="${p.k}" data-i="${i}">這次不做這個動作</button>
+            <button data-act="sets" data-i="${i}" data-d="-1" aria-label="少一組">−</button><output>${it.sets}</output>
+            <button data-act="sets" data-i="${i}" data-d="1" aria-label="多一組">＋</button></div></div>
+          <div class="fld"><label for="rp-${id}">每組次數</label><input id="rp-${id}" data-fld="reps" data-i="${i}" value="${esc(it.reps)}" placeholder="例：10" inputmode="numeric"></div>
+          <div class="fld"><label for="kg-${id}">重量 (kg)</label><input id="kg-${id}" data-fld="kg" data-i="${i}" value="${esc(it.kg)}" placeholder="例：40" inputmode="decimal"></div>
+          <button class="idel" data-act="idel" data-i="${i}">這次不做這個動作</button>
         </div>`:''}
       </li>`}).join('');
-    const items=`<ul class="items">${wc('warm')}${ex||`<li class="empty">還沒有${p.n}日菜單，可以在下面加這次的動作，或到「編輯菜單」設定固定菜單</li>`}${wc('cool')}</ul>
-      <button class="addone" data-act="iadd" data-p="${p.k}">＋ 這次加一個動作</button>`;
-    return `<article class="lift${l.done?' done':''}${isOpen?' open':''}">
-      <button class="lift-head" data-act="toggle" data-p="${p.k}" aria-expanded="${isOpen}">
-        <span class="badge">${icon(p.fruit)}</span>
-        <span class="lift-title"><b>${p.n}日</b><span>${p.sub}${l.items.length?` · ${okN}/${l.items.length} 個動作`:''}</span></span>
-        <span class="pill">${l.done?l.date+' 打卡':'未打卡'}</span><span class="chev">›</span>
-      </button>
-      ${isOpen?`<div class="lift-body">${items}
-        <div class="pain">${stepper(p.k,'pre','出門前預估痛苦',l.pre)}${stepper(p.k,'post','練完實際痛苦',l.post)}</div>
-        <button class="stamp-btn" data-act="done" data-p="${p.k}">${l.done?'取消打卡':'打卡！'}</button>
-      </div>`:''}
-    </article>`;
-  }).join('');
+    list=`<ul class="items">${chk(s.warm,'data-act="wc" data-f="warm"',WC.warm[0],WC.warm[1])}${ex||`<li class="empty">還沒有${P.n}日菜單，可以在下面加這次的動作</li>`}${chk(s.cool,'data-act="wc" data-f="cool"',WC.cool[0],WC.cool[1])}</ul>
+      <button class="addone" data-act="iadd">＋ 這次加一個動作</button>`;
+  }else{
+    list=`<ul class="items">${CLIMB_STEPS.map(([f,a,b])=>chk(s[f],`data-act="wc" data-f="${f}"`,a,b)).join('')}</ul>`;
+  }
+  return `<section class="stage${s.departAt&&!s.done?' cur':''}"><h4><i>2</i>${sheet.t==='lift'?'今天的菜單<span class="tip" style="margin-left:auto">每組留 2–3 下就收</span>':'有氧'}</h4>${list}</section>`;
 }
-const foot=icon('banana');
-function renderClimbs(){
-  const c=week?week.climbs:blankWeek().climbs;
-  $('#climbs').innerHTML=c.map((x,i)=>`<button class="climb${x.done?' done':''}${selClimb===i?' sel':''}" data-act="climb" data-i="${i}" aria-expanded="${selClimb===i}" aria-label="第 ${i+1} 次爬坡${x.done?'，'+x.date+' 已打卡':''}">
-    ${x.done?`${foot}<span class="lbl">${x.date}</span>`:`<span class="min">30</span><span class="lbl">分鐘</span>`}</button>`).join('');
-  const s=selClimb!=null&&week?week.climbs[selClimb]:null;
-  $('#climbPanel').innerHTML=s?`<div class="climb-panel"><h3>第 ${selClimb+1} 次爬坡</h3><ul class="items">
-    ${[['warm','暖身','平地快走 5 分鐘'],['main','爬坡 30 分鐘','前 5–10 分鐘低坡度、能講話的速度'],['cool','收操','慢走＋小腿、大腿後側伸展']].map(([f,a,b])=>`
-      <li class="item wc${s[f]?' ok':''}"><div class="irow"><button class="check" data-act="cwc" data-f="${f}" aria-pressed="${s[f]}" aria-label="完成${a}">${s[f]?'✓':''}</button>
-      <div class="nm"><b>${a}</b><span>${b}</span></div><span></span></div></li>`).join('')}</ul>
-    <button class="stamp-btn" data-act="cdone" style="${s.done?'background:var(--bg);color:var(--muted)':'background:var(--mint)'}">${s.done?'取消打卡':'打卡！'}</button></div>`:'';
+function stageEnd(s){
+  return `<section class="stage"><h4><i>3</i>練完</h4>${stepper('post','實際有多痛苦？',s.post)}
+    <button class="stamp-btn${s.done?' undo':''}" data-act="done">${s.done?'取消打卡':'打卡！'}</button></section>`;
 }
+function renderSheet(){
+  if(!sheet||!week) return;
+  let ic,title,sub,body;
+  if(sheet.t==='extra'){
+    ic='cherry';title='額外運動';sub='每一筆抵一次，放一顆櫻桃';
+    const xs=week.extras, other=!XTYPES.slice(0,-1).includes(xdraft.type);
+    body=`${xs.length?`<section class="stage"><h4>這週記過的</h4><ul class="xlist">${xs.map((x,i)=>`<li class="xitem">${icon('cherry')}<div><b>${esc(x.type)}${x.min?` · ${esc(x.min)} 分鐘`:''}</b><span>${esc(x.date)}${x.note?' · '+esc(x.note):''}</span></div>
+        <button data-act="xdel" data-i="${i}" aria-label="刪除這筆額外運動">✕</button></li>`).join('')}</ul></section>`:''}
+      <section class="stage cur"><h4>記一筆</h4>
+      <div class="chips">${XTYPES.map(t=>`<button data-act="xtype" data-t="${t}" aria-pressed="${t==='其他'?other:xdraft.type===t}">${t}</button>`).join('')}</div>
+      ${other?`<div class="fld"><label for="xcustom">運動名稱</label><input id="xcustom" data-x="type" value="${esc(xdraft.type==='其他'?'':xdraft.type)}" placeholder="例：騎腳踏車"></div>`:''}
+      <div class="two"><div class="fld"><label for="xmin">分鐘</label><input id="xmin" data-x="min" value="${esc(xdraft.min)}" inputmode="numeric" placeholder="60"></div>
+      <div class="fld"><label for="xnote">一句話備註</label><input id="xnote" data-x="note" value="${esc(xdraft.note)}" placeholder="例：和朋友爬七星山"></div></div>
+      <button class="stamp-btn" data-act="xsave">記下來</button></section>`;
+  }else{
+    const s=cur();
+    if(sheet.t==='lift'){const P=PARTS.find(p=>p.k===sheet.k);ic=P.fruit;title=P.n+'日';sub=P.sub}
+    else{ic='banana';title='有氧 30 分鐘';sub='跑步、爬坡、飛輪、快走都可以'}
+    const tabs=sheet.t==='climb'?`<div class="tabs" role="tablist">${week.climbs.map((c,i)=>`<button role="tab" aria-selected="${sheet.i===i}" data-act="ctab" data-i="${i}">第 ${i+1} 次${c.done?' ✓':''}</button>`).join('')}</div>`:'';
+    body=tabs+stageGo(s)+stageDo(s)+stageEnd(s);
+  }
+  $('#sheetIcon').innerHTML=icon(ic);
+  $('#sheetTitle').innerHTML=`${title}<small>${sub}</small>`;
+  $('#sheetBody').innerHTML=body;
+}
+function collect(w,pre,post,lag){
+  [...PARTS.map(p=>w.lifts[p.k]),...w.climbs].forEach(s=>{if(s.pre!=null)pre.push(s.pre);if(s.post!=null)post.push(s.post);if(s.planAt&&s.departAt)lag.push(mins(s.planAt,s.departAt))});
+}
+const avg=a=>a.length?(a.reduce((x,y)=>x+y,0)/a.length).toFixed(1):'–';
+const gap=(pre,post)=>pre.length&&post.length?(()=>{const d=(avg(pre)-avg(post)).toFixed(1);return (d>0?'+':'')+d})():'–';
+const lagTxt=a=>a.length?dur(Math.round(a.reduce((x,y)=>x+y,0)/a.length)):'–';
 function renderStats(){
-  const w=week||blankWeek(), pre=[],post=[];
-  PARTS.forEach(p=>{const l=w.lifts[p.k];if(l.pre!=null)pre.push(l.pre);if(l.post!=null)post.push(l.post)});
-  const avg=a=>a.length?(a.reduce((x,y)=>x+y,0)/a.length).toFixed(1):'–';
-  const d=(pre.length&&post.length)?(avg(pre)-avg(post)).toFixed(1):null;
+  const pre=[],post=[],lag=[]; collect(week||blankWeek(),pre,post,lag);
   $('#stats').innerHTML=`<div class="stat"><span>出門前預估</span><b>${avg(pre)}</b></div><div class="stat"><span>練完實際</span><b>${avg(post)}</b></div>
-    <div class="stat"><span>腦袋多想了</span><b>${d==null?'–':(d>0?'+':'')+d}</b></div>`;
+    <div class="stat"><span>腦袋多想了</span><b>${gap(pre,post)}</b></div><div class="stat"><span>平均拖了</span><b style="font-size:18px">${lagTxt(lag)}</b></div>`;
 }
 function renderMenu(){
   if(!mdraft){mdraft={};PARTS.forEach(p=>mdraft[p.k]=(menus?.[p.k]||[]).map(normItem))}
@@ -573,56 +619,49 @@ function renderMenu(){
 }
 const XTYPES=['爬山','游泳','跑步','瑜珈','球類','其他'];
 let xdraft=null;
-function renderExtras(){
-  const xs=week?week.extras:[];
-  $('#xlist').innerHTML=xs.map((x,i)=>`<li class="xitem">${icon('cherry')}<div><b>${esc(x.type)}${x.min?` · ${esc(x.min)} 分鐘`:''}</b><span>${esc(x.date)}${x.note?' · '+esc(x.note):''}</span></div>
-    <button data-act="xdel" data-i="${i}" aria-label="刪除這筆額外運動">✕</button></li>`).join('');
-  if(!xdraft){$('#xform').innerHTML=`<button class="addone" style="width:100%" data-act="xopen">＋ 記一筆額外運動</button>`;return}
-  const other=!XTYPES.slice(0,-1).includes(xdraft.type);
-  $('#xform').innerHTML=`<div class="xform">
-    <div class="chips">${XTYPES.map(t=>`<button data-act="xtype" data-t="${t}" aria-pressed="${t==='其他'?other:xdraft.type===t}">${t}</button>`).join('')}</div>
-    ${other?`<div class="fld"><label for="xcustom">運動名稱</label><input id="xcustom" data-x="type" value="${esc(xdraft.type==='其他'?'':xdraft.type)}" placeholder="例：騎腳踏車"></div>`:''}
-    <div class="two"><div class="fld"><label for="xmin">分鐘</label><input id="xmin" data-x="min" value="${esc(xdraft.min)}" inputmode="numeric" placeholder="60"></div>
-    <div class="fld"><label for="xnote">一句話備註</label><input id="xnote" data-x="note" value="${esc(xdraft.note)}" placeholder="例：和朋友爬七星山"></div></div>
-    <div class="mactions" style="padding:0"><button data-act="xcancel">取消</button><button class="save" data-act="xsave">記下來</button></div></div>`;
-}
-function render(){renderNav();renderCycle();renderHero();renderLifts();renderClimbs();renderExtras();renderStats();renderMenu();
+function render(){renderNav();renderToday();renderCycle();renderHero();renderStats();renderMenu();renderSheet();
   $('#note').textContent='資料存在這支手機的瀏覽器裡，從主畫面圖示打開才會是同一份。'}
 
 /* ---------- events ---------- */
-document.addEventListener('click',async e=>{
+document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]'); if(!b) return;
-  const act=b.dataset.act, p=b.dataset.p, i=+b.dataset.i;
-  if(act==='toggle'){open.has(p)?open.delete(p):open.add(p);renderLifts();return}
-  if(act==='mtab'){mtab=p;renderMenu();return}
+  const act=b.dataset.act, i=+b.dataset.i;
+  if(act==='close'){closeSheet();return}
+  if(act==='mtab'){mtab=b.dataset.p;renderMenu();return}
   if(act==='mdel'){mdraft[mtab].splice(i,1);renderMenu();return}
   if(act==='pstart'){const k=keyOf(new Date());if(!cycle.periods.some(x=>x.start===k))cycle.periods.push({start:k,end:null});saveCycle();toast('記下了，這幾天對自己好一點');render();return}
   if(act==='pend'){const k=keyOf(new Date()),o=[...cycle.periods].sort((a,b)=>a.start<b.start?-1:1).reverse().find(x=>!x.end);if(o){o.end=k;saveCycle()}toast('辛苦了，春天要來了');render();return}
   if(act==='padd'){const d=new Date();d.setDate(d.getDate()-28);cycle.periods.push({start:keyOf(d),end:null});saveCycle();pdetOpen=true;render();return}
   if(act==='pdel'){cycle.periods.splice(i,1);saveCycle();render();return}
-  if(act==='xopen'){xdraft={type:'爬山',min:'',note:''};renderExtras();return}
-  if(act==='xcancel'){xdraft=null;renderExtras();return}
-  if(act==='xtype'){xdraft.type=b.dataset.t;renderExtras();if(b.dataset.t==='其他')$('#xcustom')?.focus();return}
-  if(act==='climb'){selClimb=selClimb===i?null:i;renderClimbs();return}
-  if(act==='iedit'){const k=`${p}:${i}`;openItem=openItem===k?null:k;renderLifts();return}
   if(!week) return;
-  if(act==='item'){const it=week.lifts[p].items[i];it.ok=!it.ok}
-  if(act==='wc'){const l=week.lifts[p],f=b.dataset.f;l[f]=!l[f]}
-  if(act==='sets'){const it=week.lifts[p].items[i];it.sets=Math.max(1,Math.min(10,it.sets+(+b.dataset.d)))}
-  if(act==='idel'){week.lifts[p].items.splice(i,1);openItem=null}
-  if(act==='iadd'){const l=week.lifts[p];l.items.push({name:'',sets:3,reps:'',kg:'',ok:false});openItem=`${p}:${l.items.length-1}`;render();queueSave();document.getElementById(`nm-${p}-${l.items.length-1}`)?.focus();return}
+  if(act==='tile'){const v=b.dataset.s;
+    if(v.startsWith('lift:'))openSheet({t:'lift',k:v.slice(5)});
+    else if(v==='climb'){const c=week.climbs;let n=c.findIndex(x=>!x.done&&(x.planAt||x.departAt));if(n<0)n=c.findIndex(x=>!x.done);openSheet({t:'climb',i:n<0?0:n})}
+    else openSheet({t:'extra'});
+    return}
+  if(act==='ctab'){sheet.i=i;openItem=null;renderSheet();$('#sheetBody').scrollTop=0;return}
+  if(act==='iedit'){const k=`${sheet.k}:${i}`;openItem=openItem===k?null:k;renderSheet();return}
+  if(act==='xtype'){xdraft.type=b.dataset.t;renderSheet();if(b.dataset.t==='其他')$('#xcustom')?.focus();return}
+  const s=cur(), now=new Date().toISOString();
+  if(act==='plan'){s.planAt=now;toast('記下了，出門時再按「出門了！」')}
+  if(act==='depart'){if(!s.planAt)s.planAt=now;s.departAt=now;closeSheet();toast('出門了！回來記得打卡')}
+  if(act==='unplan'){s.planAt=null;s.departAt=null}
+  if(act==='pain'){const f=b.dataset.f;s[f]=s[f]==null?5:Math.min(10,Math.max(1,s[f]+(+b.dataset.d)))}
+  if(act==='wc'){const f=b.dataset.f;s[f]=!s[f]}
+  if(act==='item'){const it=s.items[i];it.ok=!it.ok}
+  if(act==='sets'){const it=s.items[i];it.sets=Math.max(1,Math.min(10,it.sets+(+b.dataset.d)))}
+  if(act==='idel'){s.items.splice(i,1);openItem=null}
+  if(act==='iadd'){s.items.push({name:'',sets:3,reps:'',kg:'',ok:false});openItem=`${sheet.k}:${s.items.length-1}`;render();queueSave();document.getElementById(`nm-${sheet.k}-${s.items.length-1}`)?.focus();return}
+  if(act==='done'){s.done=!s.done;s.date=s.done?todayMD():'';
+    if(s.done){toast(sheet.t==='lift'?`${PARTS.find(x=>x.k===sheet.k).n}日打卡！`:'有氧打卡！');closeSheet()}}
   if(act==='xsave'){const t=String(xdraft.type).trim();if(!t||t==='其他'){toast('先寫下是什麼運動');return}
-    week.extras.push({type:t,min:String(xdraft.min).trim(),note:String(xdraft.note).trim(),date:todayMD()});xdraft=null;toast('櫻桃 +1！')}
+    week.extras.push({type:t,min:String(xdraft.min).trim(),note:String(xdraft.note).trim(),date:todayMD()});closeSheet();toast('櫻桃 +1！')}
   if(act==='xdel'){week.extras.splice(i,1)}
-  if(act==='cwc'){const c=week.climbs[selClimb],f=b.dataset.f;c[f]=!c[f]}
-  if(act==='cdone'){const c=week.climbs[selClimb];c.done=!c.done;c.date=c.done?todayMD():'';if(c.done){toast('爬坡打卡！');selClimb=null}}
-  if(act==='pain'){const l=week.lifts[p],f=b.dataset.f;l[f]=l[f]==null?5:Math.min(10,Math.max(1,l[f]+(+b.dataset.d)))}
-  if(act==='done'){const l=week.lifts[p];l.done=!l.done;l.date=l.done?todayMD():'';if(l.done)toast(`${PARTS.find(x=>x.k===p).n}日打卡！`)}
   render(); queueSave();
 });
 document.addEventListener('input',e=>{
   const t=e.target;
-  if(t.dataset.fld&&week){const it=week.lifts[t.dataset.p].items[+t.dataset.i];it[t.dataset.fld]=t.value;
+  if(t.dataset.fld&&cur()){const it=cur().items[+t.dataset.i];it[t.dataset.fld]=t.value;
     const s=t.closest('.item')?.querySelector('.nm span');if(s)s.innerHTML=summary(it);
     if(t.dataset.fld==='name'){const n=t.closest('.item')?.querySelector('.nm b');if(n)n.textContent=t.value||'未命名動作'}
     queueSave()}
@@ -633,8 +672,7 @@ $('#madd').addEventListener('click',()=>{mdraft[mtab].push({name:'',sets:3,reps:
 $('#msave').addEventListener('click',async()=>{
   const clean={};PARTS.forEach(p=>clean[p.k]=(mdraft[p.k]||[]).filter(r=>String(r.name).trim()).map(r=>({name:String(r.name).trim(),sets:Math.max(1,parseInt(r.sets)||3),reps:String(r.reps??'').trim(),kg:String(r.kg??'').trim()})));
   menus=clean; mdraft=clone(clean);
-  try{ if(db) await db.doc('config/menus').set(clean); else local.set('menus',clean); toast('菜單存好了'); }
-  catch(e){toast('菜單沒存到，請再試一次');return}
+  local.set('menus',clean); toast('菜單存好了');
   if(week){PARTS.forEach(p=>{const l=week.lifts[p.k];if(!l.done)l.items=itemsFromMenu(p.k,l.items)});render();queueSave()}
 });
 async function go(delta){await flush();const m=parseKey(wk);m.setDate(m.getDate()+7*delta);wk=keyOf(m);lastCount=-1;loadWeek()}
@@ -665,27 +703,26 @@ function renderMonth(){
   const isCur=y===now.getFullYear()&&mo===now.getMonth();
   $('#mtag').textContent=isCur?'本月':' '; $('#mtag').className='tag'+(isCur?' now':'');
   const ev=eventsByDay(), todayK=keyOf(now);
-  let start=monday(mcur), rows='', lifts=0, climbs=0, extras=0, full=0, pre=[], post=[];
+  let start=monday(mcur), rows='', lifts=0, climbs=0, extras=0, full=0, pre=[], post=[], lag=[];
   const last=new Date(y,mo+1,0);
   while(start<=last){
     const wid=keyOf(start); let cells='';
     for(let i=0;i<7;i++){
       const d=new Date(start);d.setDate(start.getDate()+i);const k=keyOf(d),inM=d.getMonth()===mo,e=ev[k]||[];
       if(inM){lifts+=e.filter(x=>x.t==='l').length;climbs+=e.filter(x=>x.t==='c').length;extras+=e.filter(x=>x.t==='x').length}
-      const label=`${d.getMonth()+1}月${d.getDate()}日${e.length?'，'+e.map(x=>x.t==='l'?x.n+'日':x.t==='x'?x.n:'爬坡').join('、'):''}`;
+      const label=`${d.getMonth()+1}月${d.getDate()}日${e.length?'，'+e.map(x=>x.t==='l'?x.n+'日':x.t==='x'?x.n:'有氧').join('、'):''}`;
       const ph=phaseOn(d), sc=ph?ph.season:'';
       cells+=`<button class="day${inM?'':' out'}${k===todayK?' today':''}${sc==='winter'?' s-winter':''}" data-goto="${wid}" aria-label="${label}${ph?'，'+SEASONS[sc].n+'季':''}">
         <span class="dn">${d.getDate()}</span><span class="ev">${e.slice(0,2).map(x=>icon(x.t==='l'?x.f:x.t==='x'?'cherry':'banana')).join('')}${e.length>2?`<span class="more">+${e.length-2}</span>`:''}</span>${sc?`<span class="sbar" style="background:var(--${sc})"></span>`:''}</button>`;
     }
     const n=weekCount(wid);
-    if(start.getMonth()===mo){ if(n===6)full++; const w=weekWithLive(wid); if(w){const nw=normalize(w);PARTS.forEach(p=>{const l=nw.lifts[p.k];if(l.pre!=null)pre.push(l.pre);if(l.post!=null)post.push(l.post)})} }
+    if(start.getMonth()===mo){ if(n===6)full++; const w=weekWithLive(wid); if(w)collect(normalize(w),pre,post,lag); }
     rows+=`<div class="wrow">${cells}<span class="wsum${n===6?' full':''}" aria-label="這週完成 ${n} 次">${n}/6</span></div>`;
     start=new Date(start);start.setDate(start.getDate()+7);
   }
   $('#grid').innerHTML=rows;
-  const avg=a=>a.length?(a.reduce((x,y)=>x+y,0)/a.length).toFixed(1):'–';
-  $('#mstats').innerHTML=`<div class="stat"><span>重訓</span><b>${lifts}</b></div><div class="stat"><span>爬坡</span><b>${climbs}</b></div><div class="stat"><span>額外</span><b>${extras}</b></div><div class="stat"><span>全滿的週</span><b>${full}</b></div>
-    <div class="stat w4"><span>預估痛苦</span><b>${avg(pre)}</b></div><div class="stat w4"><span>實際痛苦</span><b>${avg(post)}</b></div><div class="stat w4"><span>腦袋多想了</span><b>${pre.length&&post.length?(()=>{const d=(avg(pre)-avg(post)).toFixed(1);return (d>0?'+':'')+d})():'–'}</b></div>`;
+  $('#mstats').innerHTML=`<div class="stat"><span>重訓</span><b>${lifts}</b></div><div class="stat"><span>有氧</span><b>${climbs}</b></div><div class="stat"><span>額外</span><b>${extras}</b></div><div class="stat"><span>全滿的週</span><b>${full}</b></div>
+    <div class="stat"><span>預估痛苦</span><b>${avg(pre)}</b></div><div class="stat"><span>實際痛苦</span><b>${avg(post)}</b></div><div class="stat"><span>多想了</span><b>${gap(pre,post)}</b></div><div class="stat"><span>平均拖了</span><b style="font-size:15px">${lagTxt(lag)}</b></div>`;
 }
 function setView(v){view=v;$('#weekView').hidden=v!=='week';$('#monthView').hidden=v!=='month';
   $('#tabWeek').setAttribute('aria-selected',v==='week');$('#tabMonth').setAttribute('aria-selected',v==='month');
@@ -735,22 +772,13 @@ setInterval(checkUpdate,30*60*1000);
 checkUpdate();
 
 /* ---------- boot ---------- */
-{const lg=[...PARTS.map(p=>`<span>${icon(p.fruit)}${p.n}</span>`),`<span>${icon('banana')}爬坡</span>`,`<span>${icon('cherry')}額外</span>`].join('');$('#legend').innerHTML=lg;
+{const lg=[...PARTS.map(p=>`<span>${icon(p.fruit)}${p.n}</span>`),`<span>${icon('banana')}有氧</span>`,`<span>${icon('cherry')}額外</span>`].join('');$('#legend').innerHTML=lg;
  $('#mlegend').innerHTML=lg+Object.entries(SEASONS).map(([k,v])=>`<span><i style="display:inline-block;width:12px;height:3px;border-radius:2px;background:var(--${k})"></i>${v.n}</span>`).join('')}
 render();
-(async()=>{
-  offline=true;
+(()=>{
   try{ navigator.storage?.persist?.() }catch(e){}
-  if(db){
-    db.collection('weeks').onSnapshot(s=>{allWeeks={};s.docs.forEach(d=>{allWeeks[d.id]=d.data()});if(view==='month')renderMonth()},()=>{});
-  }else{ loadAllLocal(); }
-  if(db){
-    db.doc('config/menus').onSnapshot(s=>{
-      const fresh=s.exists?s.data():{back:[],chest:[],legs:[]};
-      menus=fresh; if(!$('#menu').open) mdraft=null;
-      if(week){fillEmptyLifts()} safeRender();
-    },()=>{});
-  }else{ menus=local.get('menus')||STARTER_MENUS; if(!menus.period)menus.period=STARTER_MENUS.period; }
+  loadAllLocal();
+  menus=local.get('menus')||STARTER_MENUS; if(!menus.period)menus.period=STARTER_MENUS.period;
   cycle=local.get('cycle')||{periods:[]};
   loadWeek();
 })();

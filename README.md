@@ -34,3 +34,7 @@ scripts/release.sh "這次改了什麼"
 ```
 
 會更新版本號、commit 並 push。打開中的 app 回到前景時會比對 `version.json`，發現新版就在下方顯示「有新版本，點我更新」。
+
+## 授權與致謝
+
+水果圖示（`icons/fruit/`）來自 [Google Noto Emoji](https://github.com/googlefonts/noto-emoji)，授權與說明見 `third_party/noto-emoji/`。

@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Fredoka:wght@500;600;700&display=swap">
 <style>
-/* Layout: one narrow phone column. "Today" tiles first, basket, season card, stats; every session opens the same bottom sheet. */
+/* Layout: one narrow phone column. The basket is the start button: unpicked fruit float above it as ghosts; every session opens the same bottom sheet. */
 :root{
   --bg:#F2F4FA; --card:#FFFFFF; --ink:#2A2540; --muted:#7A7594; --line:#E3E1EF;
   --lilac:#8C7BF0; --lilac-soft:#ECE8FF; --mint:#3FBF97; --mint-soft:#DDF5EC;
@@ -78,17 +78,25 @@ h2 span{font-size:12px;color:var(--muted)}
 .sec{display:flex;flex-direction:column;gap:10px}
 .tip{font-size:13px;color:var(--muted);margin:0}
 
-/* today tiles */
-.today{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.tile{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0}
-.tile svg{width:42px;height:42px}
-.tile b{font-weight:400;font-size:15px}
-.tile small{font-size:11px;color:var(--muted);font-family:var(--num);font-weight:500;white-space:nowrap}
-.tile.done{border-color:var(--lilac);background:var(--lilac-soft)}
-.tile.done small{color:var(--lilac)}
-.tile.going{border-color:var(--peach);border-style:dashed}
-.tile.going small{color:var(--peach)}
-.tile:active{transform:scale(.97)}
+/* basket as the start button */
+.hero-head{align-self:stretch;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.hero-head b{font-weight:400;font-size:18px}
+.hero-head span{font-size:12px;color:var(--muted)}
+.orchard{position:relative;width:100%;max-width:400px;aspect-ratio:1/.95;margin:0 auto}
+.orchard #gecko{position:absolute;left:8%;bottom:0;width:84%;max-width:none}
+#gecko [data-act]{cursor:pointer}
+.seed{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;width:68px;padding:0}
+.seed .gb{width:54px;height:54px;border-radius:50%;border:2px dashed var(--line);background:var(--card);display:grid;place-items:center;animation:bob 3.2s ease-in-out infinite}
+.seed:nth-child(2n) .gb{animation-delay:-1.6s}
+.seed svg{width:38px;height:38px;opacity:.5;transition:opacity .15s}
+.seed small{font-size:12px;color:var(--muted);white-space:nowrap;line-height:1.3;margin-top:2px}
+.seed:hover svg,.seed:focus-visible svg{opacity:.9}
+.seed.going .gb{border:2px solid var(--peach);animation:pulse 1.6s ease-in-out infinite}
+.seed.going svg{opacity:.95}
+.seed.going small{color:var(--peach)}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(240,139,110,.55)}50%{box-shadow:0 0 0 9px rgba(240,139,110,0)}}
+@media (prefers-reduced-motion:reduce){.seed .gb{animation:none}}
 
 /* bottom sheet: the one place every session is logged */
 .sheet-wrap{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;justify-content:flex-end}
@@ -304,12 +312,10 @@ details.menu summary span{font-size:12px;color:var(--muted)}
     <button id="next" aria-label="下一週">›</button>
   </nav>
 
-  <section class="sec">
-    <h2><span id="todayTitle" style="font-size:18px;color:var(--ink)">今天要做什麼？</span><span id="todaySub"></span></h2>
-    <div class="today" id="today"></div>
-  </section>
-
-  <section class="hero" aria-live="polite">
+  <section class="hero">
+    <div class="hero-head"><b id="todayTitle">今天要去摘哪一個？</b><span id="todaySub">點半透明的水果開始</span></div>
+    <div class="orchard">
+    <div id="ghosts"></div>
     <svg id="gecko" viewBox="0 22 240 124" role="img" aria-label="水果籃，每打卡一次就多一顆水果">
       <defs><clipPath id="inBasket"><path d="M0 0 H240 V78 H220 A100 40 0 0 1 20 78 H0 Z"/></clipPath></defs>
       <!-- handles -->
@@ -332,9 +338,9 @@ details.menu summary span{font-size:12px;color:var(--muted)}
       <path d="M220 78 A100 40 0 0 1 20 78" fill="none" stroke="var(--basket)" stroke-width="10" stroke-linecap="round"/>
       <path d="M220 78 A100 40 0 0 1 20 78" fill="none" stroke="var(--basket-line)" stroke-width="2" stroke-dasharray="6 4" opacity=".6"/>
     </svg>
-    <div class="score" id="score">0<small> / 6</small></div>
+    </div>
+    <div class="score" id="score" aria-live="polite">0<small> / 6</small></div>
     <div class="bubble" id="bubble">新的一週，去玩吧</div>
-    <div class="legend" id="legend"></div>
   </section>
 
   <section class="cycle" id="cycle" aria-label="月經週期"></section>
@@ -380,7 +386,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2148';
+const APP_VERSION='2026.10.24-2154';
 const PARTS=[{k:'back',n:'背',sub:'背日',fruit:'grape',fn:'葡萄'},{k:'chest',n:'胸',sub:'胸・肩・三頭',fruit:'berry',fn:'草莓'},{k:'legs',n:'腿',sub:'腿日',fruit:'melon',fn:'西瓜'},{k:'period',n:'經期',sub:'輕重量，想練哪裡就練哪裡',fruit:'peach',fn:'桃子'}];
 /* fruits drawn in a 40×40 box centred on 0,0 */
 function fruit(t){
@@ -531,10 +537,21 @@ function message(n){
 function renderHero(){
   const s=week?week:blankWeek();
   const back=[{x:72,y:68},{x:120,y:62},{x:168,y:70}], front=[{x:84,y:96},{x:124,y:100},{x:162,y:96}];
-  const placed=[...liftsDone(s).slice(0,3).map((p,i)=>({t:p.fruit,...back[i]})),...s.climbs.map((c,i)=>c.done?{t:'banana',...front[i]}:null).filter(Boolean)];
+  const placed=[...liftsDone(s).slice(0,3).map((p,i)=>({t:p.fruit,s:'lift:'+p.k,n:p.n+'日',...back[i]})),...s.climbs.map((c,i)=>c.done?{t:'banana',s:'climb:'+i,n:`第 ${i+1} 次有氧`,...front[i]}:null).filter(Boolean)];
   const free=[...front.filter((_,i)=>!s.climbs[i].done),...back.slice(Math.min(3,liftsDone(s).length))];
-  (s.extras||[]).slice(0,free.length).forEach((x,i)=>placed.push({t:'cherry',...free[i]}));
-  $('#spots').innerHTML=placed.map(f=>`<g transform="translate(${f.x} ${f.y}) scale(1.35)">${fruit(f.t)}</g>`).join('');
+  (s.extras||[]).slice(0,free.length).forEach((x,i)=>placed.push({t:'cherry',s:'extra',n:x.type,...free[i]}));
+  $('#spots').innerHTML=placed.map(f=>`<g transform="translate(${f.x} ${f.y}) scale(1.35)" data-act="tile" data-s="${f.s}" role="button" tabindex="0" aria-label="${f.n}，點一下修改"><circle r="17" fill="transparent"/>${fruit(f.t)}</g>`).join('');
+  /* unpicked fruit float above the basket; tap one to start it */
+  const SLOTS=[[12,18],[37,12],[63,12],[88,18],[25,41],[75,41]];
+  const gh=[];
+  liftOrder().forEach(p=>{const l=s.lifts[p.k];if(!l.done){const [c,t]=status(l);gh.push({s:'lift:'+p.k,f:p.fruit,n:p.n,c,t})}});
+  const cd=s.climbs.filter(c=>c.done).length, going=s.climbs.find(c=>!c.done&&(c.planAt||c.departAt));
+  if(cd<3) gh.push({s:'climb',f:'banana',n:'有氧',c:going?'going':'',t:going?status(going)[1]:`${cd}/3`});
+  gh.push({s:'extra',f:'cherry',n:'額外',c:'',t:''});
+  $('#ghosts').innerHTML=gh.slice(0,6).map((g,i)=>`<button class="seed ${g.c}" style="left:${SLOTS[i][0]}%;top:${SLOTS[i][1]}%" data-act="tile" data-s="${g.s}" aria-label="開始${g.n}${g.t?'，'+g.t:''}">
+    <span class="gb">${icon(g.f)}</span><small>${g.n}${g.t?' · '+g.t:''}</small></button>`).join('');
+  $('#todayTitle').textContent=isThisWeek()?'今天要去摘哪一個？':'這週的籃子';
+  $('#todaySub').textContent=placed.length?'籃子裡的點了可以修改':'點半透明的水果開始';
   const n=count(); $('#score').innerHTML=`${n}<small> / 6</small>`; $('#bubble').textContent=message(n);
   if(lastCount>=0&&n>lastCount){const g=$('#gecko');g.classList.remove('wiggle');void g.offsetWidth;g.classList.add('wiggle')}
   lastCount=n;
@@ -556,20 +573,8 @@ const mins=(a,b)=>Math.max(0,Math.round((new Date(b)-new Date(a))/60000));
 const dur=m=>m>=60?`${Math.floor(m/60)} 小時${m%60?` ${m%60} 分`:''}`:`${m} 分鐘`;
 const isThisWeek=()=>wk===keyOf(monday(new Date()));
 
-/* ---------- today tiles ---------- */
 function liftOrder(){const ph=isThisWeek()?phaseOn(new Date()):null;return ph&&ph.season==='winter'?[PARTS[3],...PARTS.slice(0,3)]:PARTS}
-const tile=(sel,f,n,cls,txt)=>`<button class="tile ${cls}" data-act="tile" data-s="${sel}" aria-label="${n}${txt?'，'+txt:''}">${icon(f)}<b>${n}</b><small>${txt||'&nbsp;'}</small></button>`;
 function status(s){return s.done?['done','✓ '+s.date]:s.departAt?['going','出門中']:s.planAt?['going','打算去']:['','']}
-function renderToday(){
-  $('#todayTitle').textContent=isThisWeek()?'今天要做什麼？':'這週的運動';
-  $('#todaySub').textContent=isThisWeek()?'點一下開始記錄':'';
-  const w=week||blankWeek();
-  const tiles=liftOrder().map(p=>{const [c,t]=status(w.lifts[p.k]);return tile('lift:'+p.k,p.fruit,p.n,c,t)});
-  const cd=w.climbs.filter(c=>c.done).length, going=w.climbs.find(c=>!c.done&&(c.planAt||c.departAt));
-  tiles.push(tile('climb','banana','有氧',cd===3?'done':going?'going':'',going?status(going)[1]:`${cd}/3`));
-  const xn=w.extras.length; tiles.push(tile('extra','cherry','額外',xn?'done':'',xn?`+${xn}`:'記一筆'));
-  $('#today').innerHTML=tiles.join('');
-}
 
 /* ---------- the session sheet ---------- */
 let sheet=null;   // {t:'lift',k} | {t:'climb',i} | {t:'extra'}
@@ -578,7 +583,8 @@ function cur(){if(!week||!sheet)return null;return sheet.t==='lift'?week.lifts[s
 function openSheet(s){sheet=s;sel=null;xdraft=s.t==='extra'?{type:'爬山',min:'',note:''}:null;
   $('#sheet').hidden=false;document.documentElement.style.overflow='hidden';renderSheet();$('#sheetBody').scrollTop=0;setTimeout(()=>$('#sheetClose')?.focus(),60)}
 function closeSheet(){sheet=null;xdraft=null;$('#sheet').hidden=true;document.documentElement.style.overflow=''}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet)closeSheet()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet)closeSheet();
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('#gecko [role=button]')){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
 const chk=(on,attrs,title,sub)=>`<li class="item wc${on?' ok':''}"><div class="irow"><button class="check" ${attrs} aria-pressed="${on}" aria-label="完成${title}">${on?'✓':''}</button>
   <div class="nm"><b>${title}</b><span>${sub}</span></div><span></span></div></li>`;
 function stageGo(s){
@@ -689,7 +695,7 @@ function renderMenu(){
 }
 const XTYPES=['爬山','游泳','跑步','瑜珈','球類','其他'];
 let xdraft=null;
-function render(){renderNav();renderToday();renderCycle();renderHero();renderStats();renderMenu();renderSheet();
+function render(){renderNav();renderCycle();renderHero();renderStats();renderMenu();renderSheet();
   $('#note').textContent='資料存在這支手機的瀏覽器裡，從主畫面圖示打開才會是同一份。'}
 
 /* ---------- events ---------- */
@@ -706,6 +712,7 @@ document.addEventListener('click',e=>{
   if(!week) return;
   if(act==='tile'){const v=b.dataset.s;
     if(v.startsWith('lift:'))openSheet({t:'lift',k:v.slice(5)});
+    else if(v.startsWith('climb:'))openSheet({t:'climb',i:+v.slice(6)});
     else if(v==='climb'){const c=week.climbs;let n=c.findIndex(x=>!x.done&&(x.planAt||x.departAt));if(n<0)n=c.findIndex(x=>!x.done);openSheet({t:'climb',i:n<0?0:n})}
     else openSheet({t:'extra'});
     return}
@@ -847,8 +854,7 @@ setInterval(checkUpdate,30*60*1000);
 checkUpdate();
 
 /* ---------- boot ---------- */
-{const lg=[...PARTS.map(p=>`<span>${icon(p.fruit)}${p.n}</span>`),`<span>${icon('banana')}有氧</span>`,`<span>${icon('cherry')}額外</span>`].join('');$('#legend').innerHTML=lg;
- $('#mlegend').innerHTML=lg+Object.entries(SEASONS).map(([k,v])=>`<span><i style="display:inline-block;width:12px;height:3px;border-radius:2px;background:var(--${k})"></i>${v.n}</span>`).join('')}
+{const lg=[...PARTS.map(p=>`<span>${icon(p.fruit)}${p.n}</span>`),`<span>${icon('banana')}有氧</span>`,`<span>${icon('cherry')}額外</span>`].join(''); $('#mlegend').innerHTML=lg+Object.entries(SEASONS).map(([k,v])=>`<span><i style="display:inline-block;width:12px;height:3px;border-radius:2px;background:var(--${k})"></i>${v.n}</span>`).join('')}
 render();
 (()=>{
   try{ navigator.storage?.persist?.() }catch(e){}

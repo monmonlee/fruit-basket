@@ -21,8 +21,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="水果籃">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#F2F7F1" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#132019" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" id="tcLight" content="#F2F7F1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" id="tcDark" content="#132019" media="(prefers-color-scheme: dark)">
+<script>try{const t=JSON.parse(localStorage.getItem('theme'));if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Fredoka:wght@500;600;700&display=swap">
@@ -191,6 +192,10 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 .note{font-size:12px;color:var(--muted);text-align:center}
 .app .app{max-width:none;margin:0;width:100%}
 
+/* appearance */
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:4px;gap:4px}
+.seg button{flex:1;padding:8px;border-radius:99px;color:var(--muted);font-size:14px}
+.seg button[aria-checked="true"]{background:var(--primary-soft);color:var(--primary)}
 /* view tabs */
 .views{display:flex;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:4px;gap:4px}
 .views button{flex:1;padding:8px;border-radius:99px;color:var(--muted)}
@@ -393,6 +398,15 @@ details.menu summary span{font-size:12px;color:var(--muted)}
     </div>
   </section>
 
+  <section class="sec">
+    <h2>外觀 <span>只影響這個 app</span></h2>
+    <div class="seg" role="radiogroup" aria-label="外觀" id="themeSeg">
+      <button role="radio" data-theme-opt="auto">跟隨手機</button>
+      <button role="radio" data-theme-opt="light">淺色</button>
+      <button role="radio" data-theme-opt="dark">深色</button>
+    </div>
+  </section>
+
   <p class="note" id="note">讀取中…</p>
 </div>
 
@@ -412,7 +426,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2210';
+const APP_VERSION='2026.10.24-2213';
 const PARTS=[{k:'back',n:'背',sub:'背日',fruit:'grape',fn:'葡萄'},{k:'chest',n:'胸',sub:'胸・肩・三頭',fruit:'berry',fn:'草莓'},{k:'legs',n:'腿',sub:'腿日',fruit:'melon',fn:'西瓜'},{k:'period',n:'經期',sub:'輕重量，想練哪裡就練哪裡',fruit:'peach',fn:'桃子'}];
 /* fruits drawn in a 40×40 box centred on 0,0 */
 function fruit(t){
@@ -894,6 +908,18 @@ $('#importFile').addEventListener('change',async e=>{
     loadAllLocal();loadWeek();toast(`匯入了 ${ks.length} 週的紀錄`);
   }catch(err){toast('這個檔案不是水果籃的備份，請選匯出的 .json 檔')}
 });
+
+/* ---------- appearance ---------- */
+function applyTheme(t){
+  const r=document.documentElement;
+  if(t==='light'||t==='dark')r.dataset.theme=t; else delete r.dataset.theme;
+  /* a forced theme also sets the status-bar colour, whatever the phone setting */
+  const L='#F2F7F1',Dk='#132019';
+  $('#tcLight').content=t==='dark'?Dk:L; $('#tcDark').content=t==='light'?L:Dk;
+  document.querySelectorAll('[data-theme-opt]').forEach(b=>b.setAttribute('aria-checked',b.dataset.themeOpt===(t||'auto')));
+}
+$('#themeSeg').addEventListener('click',e=>{const b=e.target.closest('[data-theme-opt]');if(!b)return;const t=b.dataset.themeOpt;local.set('theme',t);applyTheme(t)});
+applyTheme(local.get('theme')||'auto');
 
 /* ---------- update check ---------- */
 let latest=null;

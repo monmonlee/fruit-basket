@@ -534,7 +534,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2347';
+const APP_VERSION='2026.10.24-2358';
 /* every person sets their own week: which lift days, how many cardio sessions, cycle on/off */
 const LIFT_SLOTS=[{k:'back',def:'背',fruit:'grape'},{k:'chest',def:'胸',fruit:'berry'},{k:'legs',def:'腿',fruit:'melon'}];
 const DEFAULT_SET={parts:{back:{on:true,name:'背'},chest:{on:true,name:'胸'},legs:{on:true,name:'腿'}},cardio:3,cardioName:'有氧',cycle:true,pain:true};
@@ -732,7 +732,8 @@ function renderHero(){
   const placed=[...liftsDone(s).slice(0,LIFT_GOAL).map(p=>({t:p.fruit,s:'lift:'+p.k,n:p.n+'日'})),
     ...s.climbs.map((c,i)=>c.done?{t:cardioFruit(c),s:'climb:'+i,n:`第 ${i+1} 次${CN()}`}:null).filter(Boolean),
     ...(s.extras||[]).map(x=>({t:'cherry',s:'extra',n:x.type}))].slice(0,GOAL).map((f,i)=>({...f,...slots[i]}));
-  const grew=lastCount>=0&&count()>lastCount;
+  /* hold the celebration while a sheet covers the basket; it plays once the sheet closes */
+  const grew=!sheet&&lastCount>=0&&count()>lastCount;
   $('#spots').innerHTML=placed.map((f,i)=>`<g transform="translate(${f.x} ${f.y}) scale(${sc})" data-act="tile" data-s="${f.s}" role="button" tabindex="0" aria-label="${f.n}，點一下修改"><g class="${grew&&i===placed.length-1?'dropin':''}"><circle r="17" fill="transparent"/>${fruit(f.t)}</g></g>`).join('');
   /* unpicked fruit float above the basket; tap one to start it */
   const SLOTS=[[12,18],[37,12],[63,12],[88,18],[25,41],[75,41]];
@@ -746,11 +747,15 @@ function renderHero(){
   $('#todayTitle').textContent=isThisWeek()?'今天要去摘哪一個？':'這週的籃子';
   $('#todaySub').textContent=placed.length?'籃子裡的點了可以修改':'點半透明的水果開始';
   const n=count(); $('#score').innerHTML=`${n}<small> / ${GOAL}</small>`; $('#bubble').textContent=message(n);
-  if(lastCount>=0&&n>lastCount){const g=$('#gecko');g.classList.remove('wiggle');void g.offsetWidth;g.classList.add('wiggle');
-    const kind=placed[placed.length-1]?.t||'grape';
-    if(n>=GOAL&&lastCount<GOAL){setTimeout(()=>{rain(['grape','berry','melon','peach','banana','cherry'],30);play('full');toast('整籃裝滿了！這週辛苦了')},350)}
-    else setTimeout(()=>{const [cx,cy]=centerOf(g);burst(cx,cy-20,[kind,'#FFD54A','#7FD39A'],10,120);play('stamp')},300)}
-  lastCount=n;
+  if(grew){const g=$('#gecko'), kind=placed[placed.length-1]?.t||'grape', full=n>=GOAL&&lastCount<GOAL;
+    /* bring the basket into view first if she had scrolled away */
+    const r=g.getBoundingClientRect(), off=r.bottom<0||r.top>innerHeight-80, wait=off?450:0;
+    if(off)g.scrollIntoView({behavior:reduceMotion()?'auto':'smooth',block:'center'});
+    setTimeout(()=>{g.classList.remove('wiggle');void g.offsetWidth;g.classList.add('wiggle');
+      g.querySelectorAll('.dropin').forEach(x=>{x.classList.remove('dropin');void x.getBBox();x.classList.add('dropin')});
+      if(full)setTimeout(()=>{rain(['grape','berry','melon','peach','banana','cherry'],30);play('full');toast('整籃裝滿了！這週辛苦了')},350);
+      else setTimeout(()=>{const [cx,cy]=centerOf(g);burst(cx,cy-20,[kind,'#FFD54A','#7FD39A'],10,120);play('stamp')},300)},wait)}
+  if(!sheet)lastCount=n;
 }
 function renderNav(){
   const m=parseKey(wk), e=new Date(m); e.setDate(m.getDate()+6);
@@ -999,6 +1004,8 @@ function render(){
 
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
+  /* iOS only lets audio start inside a tap, and the stamp sound plays a moment later */
+  if(soundOn)ac();
   const b=e.target.closest('[data-act]'); if(!b) return;
   const act=b.dataset.act, i=+b.dataset.i;
   if(act==='close'){closeSheet();return}

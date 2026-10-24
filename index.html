@@ -170,7 +170,9 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 .views button[aria-selected="true"]{background:var(--lilac);color:#fff}
 
 /* month calendar */
-.mstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mstats{display:grid;grid-template-columns:repeat(12,1fr);gap:8px}
+.mstats .stat{grid-column:span 3}
+.mstats .stat.w4{grid-column:span 4}
 .cal{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 10px}
 .dow,.wrow{display:grid;grid-template-columns:repeat(7,1fr) 30px;gap:4px}
 .dow{font-size:12px;color:var(--muted);text-align:center;margin-bottom:6px}
@@ -192,6 +194,18 @@ details.menu summary span{font-size:12px;color:var(--muted)}
   box-shadow:0 6px 20px rgba(60,40,140,.25);max-width:calc(100% - 32px);font-size:14px}
 .update span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .update button{background:#fff;color:var(--lilac);border-radius:99px;padding:6px 14px;font-size:14px;white-space:nowrap}
+/* extras */
+.xlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.xitem{display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 10px}
+.xitem svg{width:30px;height:30px}
+.xitem b{font-weight:400;display:block}
+.xitem span{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.xitem button{color:var(--warn);font-size:15px;padding:4px 6px}
+.xform{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{padding:6px 12px;border-radius:99px;background:var(--bg);font-size:14px}
+.chips button[aria-pressed="true"]{background:var(--lilac);color:#fff}
+.xform .two{display:grid;grid-template-columns:110px 1fr;gap:8px}
 /* cycle */
 .cycle{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
 .cycle-top{display:flex;align-items:center;gap:10px}
@@ -285,6 +299,12 @@ details.menu summary span{font-size:12px;color:var(--muted)}
   </section>
 
   <section class="sec">
+    <h2>額外運動 <span>每一筆抵一次，放一顆櫻桃</span></h2>
+    <ul class="xlist" id="xlist"></ul>
+    <div id="xform"></div>
+  </section>
+
+  <section class="sec">
     <h2>預估 vs 實際 <span>這週的痛苦分數平均</span></h2>
     <div class="stats" id="stats"></div>
   </section>
@@ -316,10 +336,13 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2125';
+const APP_VERSION='2026.10.24-2128';
 const PARTS=[{k:'back',n:'背',sub:'背日',fruit:'grape',fn:'葡萄'},{k:'chest',n:'胸',sub:'胸・肩・三頭',fruit:'berry',fn:'草莓'},{k:'legs',n:'腿',sub:'腿日',fruit:'melon',fn:'西瓜'},{k:'period',n:'經期',sub:'輕重量，想練哪裡就練哪裡',fruit:'peach',fn:'桃子'}];
 /* fruits drawn in a 40×40 box centred on 0,0 */
 function fruit(t){
+  if(t==='cherry') return `<path d="M-6 4 Q-3 -8 3 -15 M6 2 Q4 -8 3 -15" stroke="#4E8A3A" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="9" cy="-14" rx="6" ry="3" fill="#6CC66F" transform="rotate(-20 9 -14)"/>
+    <circle cx="-6" cy="7" r="7" fill="#E8304A" stroke="#B51F36" stroke-width="1.3"/><circle cx="7" cy="5" r="7" fill="#E8304A" stroke="#B51F36" stroke-width="1.3"/>
+    <circle cx="-8.5" cy="4.5" r="2" fill="#fff" opacity=".6"/><circle cx="4.5" cy="2.5" r="2" fill="#fff" opacity=".6"/>`;
   if(t==='peach') return `<path d="M0 -11 Q1 -16 3 -18" stroke="#7A5230" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="8" cy="-15" rx="6.5" ry="3" fill="#5DBB63" transform="rotate(-25 8 -15)"/>
     <path d="M0 -11 C-15 -15 -19 3 -10 12 C-5 17 5 17 10 12 C19 3 15 -15 0 -11Z" fill="#FFB08A" stroke="#E58460" stroke-width="1.3"/>
     <path d="M0 -10 Q-5 2 0 15" stroke="#E58460" stroke-width="1.3" fill="none" opacity=".7"/><ellipse cx="-7" cy="1" rx="5" ry="7" fill="#FF7F96" opacity=".35"/>`;
@@ -351,7 +374,7 @@ const local={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){retu
 
 function blankLift(p){return{done:false,date:'',pre:null,post:null,warm:false,cool:false,items:[]}}
 const blankClimb=()=>({done:false,date:'',warm:false,main:false,cool:false});
-function blankWeek(){const lifts={};PARTS.forEach(p=>lifts[p.k]=blankLift());return{lifts,climbs:[blankClimb(),blankClimb(),blankClimb()]}}
+function blankWeek(){const lifts={};PARTS.forEach(p=>lifts[p.k]=blankLift());return{lifts,climbs:[blankClimb(),blankClimb(),blankClimb()],extras:[]}}
 /* older rows kept sets as text like "4組" in `detail` */
 function normItem(m){const sets=Number.isFinite(m.sets)?m.sets:(parseInt(m.detail)||3);return{name:m.name||'',sets,reps:m.reps??'',kg:m.kg??''}}
 function itemsFromMenu(p,old){const prev={};(old||[]).forEach(i=>prev[i.name]=i);
@@ -359,6 +382,7 @@ function itemsFromMenu(p,old){const prev={};(old||[]).forEach(i=>prev[i.name]=i)
 function normalize(w){
   const b=blankWeek(); w=w?clone(w):b;
   w.lifts=w.lifts||b.lifts; PARTS.forEach(p=>{const l=Object.assign(blankLift(),w.lifts[p.k]||{});l.items=l.items.map(i=>Object.assign(normItem(i),{ok:!!i.ok}));w.lifts[p.k]=l});
+  w.extras=Array.isArray(w.extras)?w.extras:[];
   w.climbs=(w.climbs&&w.climbs.length===3)?w.climbs.map(c=>Object.assign(blankClimb(),c)):b.climbs; return w;
 }
 function fillEmptyLifts(){PARTS.forEach(p=>{const l=week.lifts[p.k];if(!l.done&&l.items.length===0)l.items=itemsFromMenu(p.k)})}
@@ -443,7 +467,9 @@ document.addEventListener('change',e=>{const t=e.target;if(t.dataset.pi==null)re
 /* ---------- render ---------- */
 /* a week holds 3 lift fruits; a 經期 session can stand in for any of them */
 const liftsDone=w=>PARTS.filter(p=>w.lifts[p.k].done);
-function count(){if(!week)return 0;return Math.min(3,liftsDone(week).length)+week.climbs.filter(c=>c.done).length}
+/* each extra session stands in for one missing session */
+const weekTotal=w=>Math.min(6,Math.min(3,liftsDone(w).length)+w.climbs.filter(c=>c.done).length+(w.extras||[]).length);
+function count(){if(!week)return 0;return weekTotal(week)}
 const WINTER_MSG=['冬天來了，好好休息也是訓練的一部分','冬天還有去，這顆很珍貴','有去就很棒，記得多喝溫水','練輕一點也算數，累了就回家','身體在辛苦的時候你還在動，很了不起','差一點點，但休息比裝滿籃子重要','冬天也裝滿了，記得好好犒賞自己'];
 function message(n){
   const ph=wk===keyOf(monday(new Date()))?phaseOn(new Date()):null;
@@ -454,6 +480,8 @@ function renderHero(){
   const s=week?week:blankWeek();
   const back=[{x:72,y:68},{x:120,y:62},{x:168,y:70}], front=[{x:84,y:96},{x:124,y:100},{x:162,y:96}];
   const placed=[...liftsDone(s).slice(0,3).map((p,i)=>({t:p.fruit,...back[i]})),...s.climbs.map((c,i)=>c.done?{t:'banana',...front[i]}:null).filter(Boolean)];
+  const free=[...front.filter((_,i)=>!s.climbs[i].done),...back.slice(Math.min(3,liftsDone(s).length))];
+  (s.extras||[]).slice(0,free.length).forEach((x,i)=>placed.push({t:'cherry',...free[i]}));
   $('#spots').innerHTML=placed.map(f=>`<g transform="translate(${f.x} ${f.y}) scale(1.35)">${fruit(f.t)}</g>`).join('');
   const n=count(); $('#score').innerHTML=`${n}<small> / 6</small>`; $('#bubble').textContent=message(n);
   if(lastCount>=0&&n>lastCount){const g=$('#gecko');g.classList.remove('wiggle');void g.offsetWidth;g.classList.add('wiggle')}
@@ -543,7 +571,22 @@ function renderMenu(){
       <label><small>重量 kg</small><input id="mk-${mtab}-${i}" data-m="kg" data-i="${i}" value="${esc(r.kg)}" placeholder="40" inputmode="decimal"></label></div>`).join('')
     :`<div class="empty">這一天還沒有動作</div>`;
 }
-function render(){renderNav();renderCycle();renderHero();renderLifts();renderClimbs();renderStats();renderMenu();
+const XTYPES=['爬山','游泳','跑步','瑜珈','球類','其他'];
+let xdraft=null;
+function renderExtras(){
+  const xs=week?week.extras:[];
+  $('#xlist').innerHTML=xs.map((x,i)=>`<li class="xitem">${icon('cherry')}<div><b>${esc(x.type)}${x.min?` · ${esc(x.min)} 分鐘`:''}</b><span>${esc(x.date)}${x.note?' · '+esc(x.note):''}</span></div>
+    <button data-act="xdel" data-i="${i}" aria-label="刪除這筆額外運動">✕</button></li>`).join('');
+  if(!xdraft){$('#xform').innerHTML=`<button class="addone" style="width:100%" data-act="xopen">＋ 記一筆額外運動</button>`;return}
+  const other=!XTYPES.slice(0,-1).includes(xdraft.type);
+  $('#xform').innerHTML=`<div class="xform">
+    <div class="chips">${XTYPES.map(t=>`<button data-act="xtype" data-t="${t}" aria-pressed="${t==='其他'?other:xdraft.type===t}">${t}</button>`).join('')}</div>
+    ${other?`<div class="fld"><label for="xcustom">運動名稱</label><input id="xcustom" data-x="type" value="${esc(xdraft.type==='其他'?'':xdraft.type)}" placeholder="例：騎腳踏車"></div>`:''}
+    <div class="two"><div class="fld"><label for="xmin">分鐘</label><input id="xmin" data-x="min" value="${esc(xdraft.min)}" inputmode="numeric" placeholder="60"></div>
+    <div class="fld"><label for="xnote">一句話備註</label><input id="xnote" data-x="note" value="${esc(xdraft.note)}" placeholder="例：和朋友爬七星山"></div></div>
+    <div class="mactions" style="padding:0"><button data-act="xcancel">取消</button><button class="save" data-act="xsave">記下來</button></div></div>`;
+}
+function render(){renderNav();renderCycle();renderHero();renderLifts();renderClimbs();renderExtras();renderStats();renderMenu();
   $('#note').textContent='資料存在這支手機的瀏覽器裡，從主畫面圖示打開才會是同一份。'}
 
 /* ---------- events ---------- */
@@ -557,6 +600,9 @@ document.addEventListener('click',async e=>{
   if(act==='pend'){const k=keyOf(new Date()),o=[...cycle.periods].sort((a,b)=>a.start<b.start?-1:1).reverse().find(x=>!x.end);if(o){o.end=k;saveCycle()}toast('辛苦了，春天要來了');render();return}
   if(act==='padd'){const d=new Date();d.setDate(d.getDate()-28);cycle.periods.push({start:keyOf(d),end:null});saveCycle();pdetOpen=true;render();return}
   if(act==='pdel'){cycle.periods.splice(i,1);saveCycle();render();return}
+  if(act==='xopen'){xdraft={type:'爬山',min:'',note:''};renderExtras();return}
+  if(act==='xcancel'){xdraft=null;renderExtras();return}
+  if(act==='xtype'){xdraft.type=b.dataset.t;renderExtras();if(b.dataset.t==='其他')$('#xcustom')?.focus();return}
   if(act==='climb'){selClimb=selClimb===i?null:i;renderClimbs();return}
   if(act==='iedit'){const k=`${p}:${i}`;openItem=openItem===k?null:k;renderLifts();return}
   if(!week) return;
@@ -565,6 +611,9 @@ document.addEventListener('click',async e=>{
   if(act==='sets'){const it=week.lifts[p].items[i];it.sets=Math.max(1,Math.min(10,it.sets+(+b.dataset.d)))}
   if(act==='idel'){week.lifts[p].items.splice(i,1);openItem=null}
   if(act==='iadd'){const l=week.lifts[p];l.items.push({name:'',sets:3,reps:'',kg:'',ok:false});openItem=`${p}:${l.items.length-1}`;render();queueSave();document.getElementById(`nm-${p}-${l.items.length-1}`)?.focus();return}
+  if(act==='xsave'){const t=String(xdraft.type).trim();if(!t||t==='其他'){toast('先寫下是什麼運動');return}
+    week.extras.push({type:t,min:String(xdraft.min).trim(),note:String(xdraft.note).trim(),date:todayMD()});xdraft=null;toast('櫻桃 +1！')}
+  if(act==='xdel'){week.extras.splice(i,1)}
   if(act==='cwc'){const c=week.climbs[selClimb],f=b.dataset.f;c[f]=!c[f]}
   if(act==='cdone'){const c=week.climbs[selClimb];c.done=!c.done;c.date=c.done?todayMD():'';if(c.done){toast('爬坡打卡！');selClimb=null}}
   if(act==='pain'){const l=week.lifts[p],f=b.dataset.f;l[f]=l[f]==null?5:Math.min(10,Math.max(1,l[f]+(+b.dataset.d)))}
@@ -578,6 +627,7 @@ document.addEventListener('input',e=>{
     if(t.dataset.fld==='name'){const n=t.closest('.item')?.querySelector('.nm b');if(n)n.textContent=t.value||'未命名動作'}
     queueSave()}
   if(t.dataset.m){mdraft[mtab][+t.dataset.i][t.dataset.m]=t.value}
+  if(t.dataset.x&&xdraft){xdraft[t.dataset.x]=t.value}
 });
 $('#madd').addEventListener('click',()=>{mdraft[mtab].push({name:'',sets:3,reps:'',kg:''});renderMenu();const ins=document.querySelectorAll('#mrows input[data-m="name"]');ins[ins.length-1]?.focus()});
 $('#msave').addEventListener('click',async()=>{
@@ -604,27 +654,28 @@ function eventsByDay(){
     const push=(date,e)=>{const k=days[date];if(k)(ev[k]=ev[k]||[]).push(e)};
     PARTS.forEach(p=>{const l=w.lifts[p.k];if(l.done)push(l.date,{t:'l',n:p.n,f:p.fruit})});
     w.climbs.forEach(c=>{if(c.done)push(c.date,{t:'c'})});
+    w.extras.forEach(x=>push(x.date,{t:'x',n:x.type}));
   });
   return ev;
 }
-function weekCount(id){const w=weekWithLive(id);if(!w)return 0;const n=normalize(w);return Math.min(3,liftsDone(n).length)+n.climbs.filter(c=>c.done).length}
+function weekCount(id){const w=weekWithLive(id);if(!w)return 0;return weekTotal(normalize(w))}
 function renderMonth(){
   const y=mcur.getFullYear(), mo=mcur.getMonth(), now=new Date();
   $('#mrange').textContent=`${y} 年 ${mo+1} 月`;
   const isCur=y===now.getFullYear()&&mo===now.getMonth();
   $('#mtag').textContent=isCur?'本月':' '; $('#mtag').className='tag'+(isCur?' now':'');
   const ev=eventsByDay(), todayK=keyOf(now);
-  let start=monday(mcur), rows='', lifts=0, climbs=0, full=0, pre=[], post=[];
+  let start=monday(mcur), rows='', lifts=0, climbs=0, extras=0, full=0, pre=[], post=[];
   const last=new Date(y,mo+1,0);
   while(start<=last){
     const wid=keyOf(start); let cells='';
     for(let i=0;i<7;i++){
       const d=new Date(start);d.setDate(start.getDate()+i);const k=keyOf(d),inM=d.getMonth()===mo,e=ev[k]||[];
-      if(inM){lifts+=e.filter(x=>x.t==='l').length;climbs+=e.filter(x=>x.t==='c').length}
-      const label=`${d.getMonth()+1}月${d.getDate()}日${e.length?'，'+e.map(x=>x.t==='l'?x.n+'日':'爬坡').join('、'):''}`;
+      if(inM){lifts+=e.filter(x=>x.t==='l').length;climbs+=e.filter(x=>x.t==='c').length;extras+=e.filter(x=>x.t==='x').length}
+      const label=`${d.getMonth()+1}月${d.getDate()}日${e.length?'，'+e.map(x=>x.t==='l'?x.n+'日':x.t==='x'?x.n:'爬坡').join('、'):''}`;
       const ph=phaseOn(d), sc=ph?ph.season:'';
       cells+=`<button class="day${inM?'':' out'}${k===todayK?' today':''}${sc==='winter'?' s-winter':''}" data-goto="${wid}" aria-label="${label}${ph?'，'+SEASONS[sc].n+'季':''}">
-        <span class="dn">${d.getDate()}</span><span class="ev">${e.slice(0,2).map(x=>icon(x.t==='l'?x.f:'banana')).join('')}${e.length>2?`<span class="more">+${e.length-2}</span>`:''}</span>${sc?`<span class="sbar" style="background:var(--${sc})"></span>`:''}</button>`;
+        <span class="dn">${d.getDate()}</span><span class="ev">${e.slice(0,2).map(x=>icon(x.t==='l'?x.f:x.t==='x'?'cherry':'banana')).join('')}${e.length>2?`<span class="more">+${e.length-2}</span>`:''}</span>${sc?`<span class="sbar" style="background:var(--${sc})"></span>`:''}</button>`;
     }
     const n=weekCount(wid);
     if(start.getMonth()===mo){ if(n===6)full++; const w=weekWithLive(wid); if(w){const nw=normalize(w);PARTS.forEach(p=>{const l=nw.lifts[p.k];if(l.pre!=null)pre.push(l.pre);if(l.post!=null)post.push(l.post)})} }
@@ -633,8 +684,8 @@ function renderMonth(){
   }
   $('#grid').innerHTML=rows;
   const avg=a=>a.length?(a.reduce((x,y)=>x+y,0)/a.length).toFixed(1):'–';
-  $('#mstats').innerHTML=`<div class="stat"><span>重訓</span><b>${lifts}</b></div><div class="stat"><span>爬坡</span><b>${climbs}</b></div><div class="stat"><span>全滿的週</span><b>${full}</b></div>
-    <div class="stat"><span>預估痛苦</span><b>${avg(pre)}</b></div><div class="stat"><span>實際痛苦</span><b>${avg(post)}</b></div><div class="stat"><span>腦袋多想了</span><b>${pre.length&&post.length?(()=>{const d=(avg(pre)-avg(post)).toFixed(1);return (d>0?'+':'')+d})():'–'}</b></div>`;
+  $('#mstats').innerHTML=`<div class="stat"><span>重訓</span><b>${lifts}</b></div><div class="stat"><span>爬坡</span><b>${climbs}</b></div><div class="stat"><span>額外</span><b>${extras}</b></div><div class="stat"><span>全滿的週</span><b>${full}</b></div>
+    <div class="stat w4"><span>預估痛苦</span><b>${avg(pre)}</b></div><div class="stat w4"><span>實際痛苦</span><b>${avg(post)}</b></div><div class="stat w4"><span>腦袋多想了</span><b>${pre.length&&post.length?(()=>{const d=(avg(pre)-avg(post)).toFixed(1);return (d>0?'+':'')+d})():'–'}</b></div>`;
 }
 function setView(v){view=v;$('#weekView').hidden=v!=='week';$('#monthView').hidden=v!=='month';
   $('#tabWeek').setAttribute('aria-selected',v==='week');$('#tabMonth').setAttribute('aria-selected',v==='month');
@@ -684,7 +735,7 @@ setInterval(checkUpdate,30*60*1000);
 checkUpdate();
 
 /* ---------- boot ---------- */
-{const lg=[...PARTS.map(p=>`<span>${icon(p.fruit)}${p.n}</span>`),`<span>${icon('banana')}爬坡</span>`].join('');$('#legend').innerHTML=lg;
+{const lg=[...PARTS.map(p=>`<span>${icon(p.fruit)}${p.n}</span>`),`<span>${icon('banana')}爬坡</span>`,`<span>${icon('cherry')}額外</span>`].join('');$('#legend').innerHTML=lg;
  $('#mlegend').innerHTML=lg+Object.entries(SEASONS).map(([k,v])=>`<span><i style="display:inline-block;width:12px;height:3px;border-radius:2px;background:var(--${k})"></i>${v.n}</span>`).join('')}
 render();
 (async()=>{

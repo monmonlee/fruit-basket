@@ -238,6 +238,32 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 .fr.pop svg{animation:popf .35s ease}
 @keyframes popf{50%{transform:scale(1.35)}}
 @media (prefers-reduced-motion:reduce){.spark,.dropin,.fr.pop svg{animation:none}.spark{display:none}}
+/* "I really don't want to work out" decision cards */
+.meh{font-size:14px;color:var(--muted);padding:6px 14px;border-radius:99px;border:1px dashed var(--muted)}
+.deck{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;align-items:center;
+  padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.deck-top{width:100%;max-width:440px;display:flex;justify-content:space-between;align-items:center;min-height:40px}
+.deck-top .back{font-size:14px;color:var(--muted);padding:8px 4px}
+.dcard{width:100%;max-width:440px;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;animation:dslide .32s cubic-bezier(.2,.8,.3,1)}
+@keyframes dslide{from{transform:translateX(40px);opacity:0}}
+.dcard.backward{animation-name:dslideb}
+@keyframes dslideb{from{transform:translateX(-40px);opacity:0}}
+.dcard .face{width:150px;height:150px}
+.dcard h3{margin:0;font-size:24px;font-weight:400;text-wrap:balance}
+.dcard p{margin:0;color:var(--muted);font-size:15px;max-width:30ch;text-wrap:balance}
+.dcard .qno{font-family:var(--num);font-size:13px;color:var(--primary);letter-spacing:.1em}
+.answers{width:100%;display:grid;gap:10px;margin-top:6px}
+.answers button{padding:14px;border-radius:16px;font-size:16px;background:var(--card);border:1.5px solid var(--line)}
+.answers button.pri{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.drum{font-size:34px;letter-spacing:.1em;min-height:1.4em}
+.drum span{display:inline-block;animation:dum .35s ease both}
+@keyframes dum{0%{transform:scale(2.2);opacity:0}60%{transform:scale(.9);opacity:1}100%{transform:none}}
+.verdict{font-size:34px;color:var(--primary);animation:reveal .6s cubic-bezier(.2,1.6,.4,1) both}
+.verdict.rest{color:var(--winter)}
+@keyframes reveal{0%{transform:scale(.3) rotate(-8deg);opacity:0}100%{transform:none;opacity:1}}
+.zz{position:fixed;font-family:var(--num);font-size:26px;color:var(--winter);pointer-events:none;z-index:60;animation:zz 2.4s ease-out forwards}
+@keyframes zz{0%{transform:translate(0,0) scale(.6);opacity:0}20%{opacity:1}100%{transform:translate(var(--dx),-240px) scale(1.4);opacity:0}}
+@media (prefers-reduced-motion:reduce){.dcard,.drum span,.verdict,.zz{animation:none}}
 /* appearance */
 .seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:4px;gap:4px}
 .seg button{flex:1;padding:8px;border-radius:99px;color:var(--muted);font-size:14px}
@@ -362,6 +388,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
   <div class="views" role="tablist" aria-label="切換檢視">
     <button role="tab" id="tabWeek" aria-selected="true" data-view="week">週卡</button>
     <button role="tab" id="tabMonth" aria-selected="false" data-view="month">月曆</button>
+    <button role="tab" id="tabSet" aria-selected="false" data-view="settings">設定</button>
   </div>
 
   <div id="monthView" class="app" hidden>
@@ -420,6 +447,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
     </div>
     <div class="score" id="score" aria-live="polite">0<small> / 6</small></div>
     <div class="bubble" id="bubble">新的一週，去玩吧</div>
+    <button class="meh" data-act="deck">今天真的很不想運動…</button>
   </section>
 
   <div id="nudge" style="display:flex;flex-direction:column;gap:12px"></div>
@@ -432,6 +460,9 @@ details.menu summary span{font-size:12px;color:var(--muted)}
     <div class="stats" id="stats"></div>
   </section>
 
+  </div>
+
+  <div id="setView" class="app" hidden>
   <section class="sec">
     <h2>每週目標 <span id="goalLine"></span></h2>
     <button class="addone" data-act="opensettings">調整每週目標（部位、有氧次數、週期功能）</button>
@@ -443,7 +474,6 @@ details.menu summary span{font-size:12px;color:var(--muted)}
     <div class="mrows" id="mrows"></div>
     <div class="mactions"><button id="madd">＋ 加一個動作</button><button class="save" id="msave">儲存菜單</button></div>
   </details>
-  </div>
 
   <section class="sec">
     <h2>備份 <span>換手機或清除 Safari 資料前記得匯出</span></h2>
@@ -466,6 +496,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
   </section>
 
   <p class="note" id="note">讀取中…</p>
+  </div>
 </div>
 
 <div class="sheet-wrap" id="sheet" hidden>
@@ -477,6 +508,8 @@ details.menu summary span{font-size:12px;color:var(--muted)}
   </div>
 </div>
 
+<div class="deck" id="deck" hidden role="dialog" aria-modal="true" aria-label="今天真的很不想運動"></div>
+
 <div class="update" id="updateBar" role="status" hidden>
   <span id="updateText">有新版本</span>
   <button id="updateBtn">點我更新</button>
@@ -484,7 +517,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2237';
+const APP_VERSION='2026.10.24-2246';
 /* every person sets their own week: which lift days, how many cardio sessions, cycle on/off */
 const LIFT_SLOTS=[{k:'back',def:'背',fruit:'grape'},{k:'chest',def:'胸',fruit:'berry'},{k:'legs',def:'腿',fruit:'melon'}];
 const DEFAULT_SET={parts:{back:{on:true,name:'背'},chest:{on:true,name:'胸'},legs:{on:true,name:'腿'}},cardio:3,cycle:true,pain:true};
@@ -778,7 +811,7 @@ function cur(){if(!week||!sheet)return null;return sheet.t==='lift'?week.lifts[s
 function openSheet(s){sheet=s;delete sheet.diff;sel=null;pickDay=defaultDay();xdraft=s.t==='extra'?{type:'爬山',min:'',note:''}:null;
   $('#sheet').hidden=false;document.documentElement.style.overflow='hidden';renderSheet();$('#sheetBody').scrollTop=0;setTimeout(()=>$('#sheetClose')?.focus(),60)}
 function closeSheet(){if(sheet&&sheet.t==='setup'&&!sheet.leaving)return;sheet=null;xdraft=null;$('#sheet').hidden=true;document.documentElement.style.overflow=''}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet)closeSheet();
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#deck').hidden){closeDeck();return}if(e.key==='Escape'&&sheet)closeSheet();
   if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('#gecko [role=button]')){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
 const chk=(on,attrs,title,sub)=>`<li class="item wc${on?' ok':''}"><div class="irow"><button class="check" ${attrs} aria-pressed="${on}" aria-label="完成${title}">${on?'✓':''}</button>
   <div class="nm"><b>${title}</b><span>${sub}</span></div><span></span></div></li>`;
@@ -930,6 +963,7 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]'); if(!b) return;
   const act=b.dataset.act, i=+b.dataset.i;
   if(act==='close'){closeSheet();return}
+  if(act==='deck'){openDeck();return}
   if(act==='jarmonth'||act==='jargo'){mcur=new Date(+b.dataset.y,+b.dataset.m,1);if(act==='jargo'){const n=new Date(),p=new Date(n.getFullYear(),n.getMonth()-1,1);local.set('jarSeen',`${p.getFullYear()}-${p.getMonth()+1}`);play('jam')}setView('month');renderNudge();window.scrollTo(0,0);return}
   if(act==='jarlater'){const n=new Date(),p=new Date(n.getFullYear(),n.getMonth()-1,1);local.set('jarSeen',`${p.getFullYear()}-${p.getMonth()+1}`);renderNudge();return}
   if(act==='opensettings'){sdraft=JSON.parse(JSON.stringify(SET));openSheet({t:'goal'});return}
@@ -1068,10 +1102,10 @@ function renderMonth(){
   $('#mstats').innerHTML=`<div class="stat"><span>重訓</span><b>${lifts}</b></div><div class="stat"><span>有氧</span><b>${climbs}</b></div><div class="stat"><span>額外</span><b>${extras}</b></div><div class="stat"><span>全滿的週</span><b>${full}</b></div>
     ${SET.pain?`<div class="stat"><span>預估痛苦</span><b>${avg(pre)}</b></div><div class="stat"><span>實際痛苦</span><b>${avg(post)}</b></div><div class="stat"><span>多想了</span><b>${gap(pre,post)}</b></div>`:''}<div class="stat"><span>平均拖了</span><b style="font-size:15px">${lagTxt(lag)}</b></div>`;
 }
-function setView(v){view=v;$('#weekView').hidden=v!=='week';$('#monthView').hidden=v!=='month';
-  $('#tabWeek').setAttribute('aria-selected',v==='week');$('#tabMonth').setAttribute('aria-selected',v==='month');
+function setView(v){view=v;$('#weekView').hidden=v!=='week';$('#monthView').hidden=v!=='month';$('#setView').hidden=v!=='settings';
+  $('#tabWeek').setAttribute('aria-selected',v==='week');$('#tabMonth').setAttribute('aria-selected',v==='month');$('#tabSet').setAttribute('aria-selected',v==='settings');window.scrollTo(0,0);
   if(v==='month')renderMonth()}
-document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',async()=>{if(b.dataset.view==='month'){await flush()}setView(b.dataset.view)}));
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',async()=>{await flush();setView(b.dataset.view)}));
 $('#mprev').addEventListener('click',()=>{mcur=new Date(mcur.getFullYear(),mcur.getMonth()-1,1);renderMonth()});
 $('#mnext').addEventListener('click',()=>{mcur=new Date(mcur.getFullYear(),mcur.getMonth()+1,1);renderMonth()});
 $('#grid').addEventListener('click',e=>{const b=e.target.closest('[data-goto]');if(!b)return;const id=b.dataset.goto;setView('week');if(id!==wk){wk=id;lastCount=-1;loadWeek()}});
@@ -1169,6 +1203,76 @@ function renderShelf(){
 /* last month's jar is ready: invite her to the shelf once */
 function jarReady(){const n=new Date(),p=new Date(n.getFullYear(),n.getMonth()-1,1),k=`${p.getFullYear()}-${p.getMonth()+1}`;
   if(local.get('jarSeen')===k)return null;const t=monthTally(p.getFullYear(),p.getMonth());return t.total?{k,t,m:p.getMonth()+1,y:p.getFullYear(),mo:p.getMonth()}:null}
+
+/* ---------- "今天真的很不想運動" decision cards ---------- */
+const FACES={
+  sus:`<circle cx="60" cy="60" r="52" fill="#FFD966" stroke="#C9A227" stroke-width="3"/>
+    <path d="M30 40 Q42 30 54 38" stroke="#4A3A10" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M68 46 H92" stroke="#4A3A10" stroke-width="5" stroke-linecap="round"/>
+    <path d="M34 54 Q42 50 50 54" stroke="#4A3A10" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="80" cy="56" rx="7" ry="4" fill="#4A3A10"/>
+    <path d="M46 84 Q62 78 76 86" stroke="#4A3A10" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="96" cy="30" r="9" fill="#fff" stroke="#C9A227" stroke-width="2"/><text x="96" y="35" text-anchor="middle" font-size="14" font-weight="700" fill="#C9A227">?</text>`,
+  think:`<circle cx="60" cy="60" r="52" fill="#FFD966" stroke="#C9A227" stroke-width="3"/>
+    <circle cx="44" cy="52" r="6" fill="#4A3A10"/><circle cx="78" cy="52" r="6" fill="#4A3A10"/><circle cx="46" cy="50" r="2" fill="#fff"/><circle cx="80" cy="50" r="2" fill="#fff"/>
+    <path d="M48 82 H74" stroke="#4A3A10" stroke-width="5" stroke-linecap="round"/><circle cx="88" cy="86" r="10" fill="#F2C744" stroke="#C9A227" stroke-width="2"/><path d="M82 80 L90 74" stroke="#C9A227" stroke-width="3" stroke-linecap="round"/>`,
+  go:`<circle cx="60" cy="60" r="52" fill="#FFD966" stroke="#C9A227" stroke-width="3"/>
+    <path d="M34 50 Q42 40 50 50" stroke="#4A3A10" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M70 50 Q78 40 86 50" stroke="#4A3A10" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M38 70 Q60 98 82 70 Z" fill="#7A2E1E"/><path d="M48 80 Q60 90 72 80" fill="#F07A7A"/><path d="M98 34 q4 8 0 14 q-4 -6 0 -14Z" fill="#7EC8F0"/>`,
+  rest:`<circle cx="60" cy="60" r="52" fill="#FFE6A8" stroke="#C9A227" stroke-width="3"/>
+    <path d="M34 54 Q42 60 50 54" stroke="#4A3A10" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M70 54 Q78 60 86 54" stroke="#4A3A10" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="60" cy="80" rx="7" ry="5" fill="#7A2E1E"/><circle cx="38" cy="68" r="6" fill="#FFB0A0" opacity=".6"/><circle cx="82" cy="68" r="6" fill="#FFB0A0" opacity=".6"/>
+    <text x="92" y="30" font-size="18" font-weight="700" fill="#6F9BE0">z</text><text x="102" y="18" font-size="13" font-weight="700" fill="#6F9BE0">z</text>`};
+const face=k=>`<svg class="face" viewBox="0 0 120 120" aria-hidden="true">${FACES[k]}</svg>`;
+/* each question: [question, yes label, no label, yes → node, no → node] */
+function deckNodes(){
+  const n=count(), afterSleep=SET.cycle?'q3':'q4';
+  return{
+    start:{intro:true},
+    q1:['你是真的生病、受傷，或發燒了嗎？','是，真的不舒服','沒有啦','r_sick','q2'],
+    q2:['昨天睡不到 6 小時？','對，睡很少','有睡飽','q2b',afterSleep],
+    q2b:['現在眼皮重到可以夾住一支筆？','可以，超睏','還撐得住','r_sleep',afterSleep],
+    q3:['現在是經期，而且肚子很不舒服？','是，很不舒服','還好','r_period','q4'],
+    q4:['老實說，是「真的很累」，還是「想到就覺得累」？','真的很累','想到就累','q5','r_brain'],
+    q5:[`這週的籃子已經摘了一半以上嗎？（現在 ${n}/${GOAL}）`,'有，超過一半','還沒','q6','r_mini'],
+    q6:['如果只做熱身＋第一個動作，做完就能回家，你願意嗎？','好啦可以','連這個都不想','r_mini','r_earned'],
+    r_sick:{go:false,line:'身體在求救。今天的任務是躺好、多喝水。'},
+    r_sleep:{go:false,line:'肌肉是在睡覺時長的。今天早點睡，也算在訓練。'},
+    r_period:{go:false,line:'冬天就好好過冬。真的想動，做 10 分鐘伸展就算數。'},
+    r_brain:{go:true,line:'那是腦袋在播誇張的預告片。實際去了，通常沒那麼痛。'},
+    r_mini:{go:true,line:'只要熱身＋第一個動作，做完想走就走。水果在等你！'},
+    r_earned:{go:false,line:'這週已經很努力了。今天休息，明天再來摘。'}};
+}
+let deckPath=[], deckDir='';
+function openDeck(){deckPath=['start'];deckDir='';$('#deck').hidden=false;document.documentElement.style.overflow='hidden';renderDeck()}
+function closeDeck(){$('#deck').hidden=true;document.documentElement.style.overflow=''}
+function renderDeck(){
+  const N=deckNodes(), id=deckPath[deckPath.length-1], node=N[id], qs=deckPath.filter(x=>x.startsWith('q')).length;
+  const top=`<div class="deck-top">${deckPath.length>1&&!id.startsWith('r_')?'<button class="back" data-act="dback">← 上一題</button>':'<span></span>'}<button class="xbtn" data-act="dclose" aria-label="關閉">✕</button></div>`;
+  let card;
+  if(node.intro) card=`${face('sus')}<h3>嗯？你確定嗎？</h3><p>先別急著躺平。回答幾個問題，讓水果籃幫你判斷今天該去還是該休息。</p>
+    <div class="answers"><button class="pri" data-act="dnext" data-to="q1">好，問吧</button></div>`;
+  else if(Array.isArray(node)) card=`${face('think')}<span class="qno">第 ${qs} 題</span><h3>${node[0]}</h3>
+    <div class="answers"><button data-act="dnext" data-to="${node[3]}">${node[1]}</button><button data-act="dnext" data-to="${node[4]}">${node[2]}</button></div>`;
+  else card=`<div class="drum" id="drum" aria-live="polite"></div><div id="verdict" hidden></div>`;
+  $('#deck').innerHTML=top+`<div class="dcard ${deckDir}">${card}</div>`;
+  if(id.startsWith('r_')) drumroll(node);
+}
+function drumroll(node){
+  const words=['登','、登','、登','、登……'], drum=$('#drum');
+  words.forEach((w,i)=>setTimeout(()=>{if($('#deck').hidden)return;drum.insertAdjacentHTML('beforeend',`<span>${w}</span>`);if(soundOn){tone(98,0,.22,'triangle',.3,60);tone(196,0,.08,'square',.04)}},i*420));
+  setTimeout(()=>{if($('#deck').hidden)return;const v=$('#verdict');v.hidden=false;
+    v.innerHTML=`${face(node.go?'go':'rest')}<h3 class="verdict${node.go?'':' rest'}">${node.go?'你應該去運動！':'今天休息！'}</h3><p>${node.line}</p>
+      <div class="answers">${node.go?'<button class="pri" data-act="dgo">好啦我去</button>':'<button class="pri" data-act="dclose">好好休息</button>'}<button data-act="dagain">重來一次</button></div>`;
+    if(node.go){rain(['grape','berry','melon','peach','banana','cherry'],26);if(soundOn)SFX.full()}
+    else{if(!reduceMotion())for(let i=0;i<6;i++){const z=document.createElement('span');z.className='zz';z.textContent=i%2?'z':'Z';z.style.left=(30+Math.random()*40)+'%';z.style.top='62%';z.style.setProperty('--dx',(Math.random()*80-40)+'px');z.style.animationDelay=i*.25+'s';document.body.appendChild(z);setTimeout(()=>z.remove(),4000)}
+      if(soundOn)[784,659,523,392].forEach((f,i)=>tone(f,i*.18,.5,'sine',.09))}
+  },words.length*420+250);
+}
+document.addEventListener('click',e=>{const b=e.target.closest('#deck [data-act]');if(!b)return;e.stopPropagation();const a=b.dataset.act;
+  if(a==='dclose'){closeDeck();return}
+  if(a==='dnext'){deckPath.push(b.dataset.to);deckDir='';renderDeck();return}
+  if(a==='dback'){deckPath.pop();deckDir='backward';renderDeck();return}
+  if(a==='dagain'){deckPath=['start'];deckDir='';renderDeck();return}
+  if(a==='dgo'){closeDeck();toast('出發！到了記得點水果、按「已經出門了」');return}
+},true);
 
 /* ---------- appearance ---------- */
 function applyTheme(t){

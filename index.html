@@ -255,6 +255,11 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 .answers{width:100%;display:grid;gap:10px;margin-top:6px}
 .answers button{padding:14px;border-radius:16px;font-size:16px;background:var(--card);border:1.5px solid var(--line)}
 .answers button.pri{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.emo{font-size:96px;line-height:1.1;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+.answers button small{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.ev{font-size:13px;line-height:1.5;padding:8px 12px;border-radius:12px;text-align:left;max-width:34ch;margin:0}
+.ev.r{background:var(--primary-soft);color:var(--ink)}
+.ev.t{background:var(--card);border:1px dashed var(--line);color:var(--muted)}
 .drum{font-size:34px;letter-spacing:.1em;min-height:1.4em}
 .drum span{display:inline-block;animation:dum .35s ease both}
 @keyframes dum{0%{transform:scale(2.2);opacity:0}60%{transform:scale(.9);opacity:1}100%{transform:none}}
@@ -517,7 +522,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.24-2246';
+const APP_VERSION='2026.10.24-2257';
 /* every person sets their own week: which lift days, how many cardio sessions, cycle on/off */
 const LIFT_SLOTS=[{k:'back',def:'背',fruit:'grape'},{k:'chest',def:'胸',fruit:'berry'},{k:'legs',def:'腿',fruit:'melon'}];
 const DEFAULT_SET={parts:{back:{on:true,name:'背'},chest:{on:true,name:'胸'},legs:{on:true,name:'腿'}},cardio:3,cycle:true,pain:true};
@@ -1204,65 +1209,109 @@ function renderShelf(){
 function jarReady(){const n=new Date(),p=new Date(n.getFullYear(),n.getMonth()-1,1),k=`${p.getFullYear()}-${p.getMonth()+1}`;
   if(local.get('jarSeen')===k)return null;const t=monthTally(p.getFullYear(),p.getMonth());return t.total?{k,t,m:p.getMonth()+1,y:p.getFullYear(),mo:p.getMonth()}:null}
 
-/* ---------- "今天真的很不想運動" decision cards ---------- */
-const FACES={
-  sus:`<circle cx="60" cy="60" r="52" fill="#FFD966" stroke="#C9A227" stroke-width="3"/>
-    <path d="M30 40 Q42 30 54 38" stroke="#4A3A10" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M68 46 H92" stroke="#4A3A10" stroke-width="5" stroke-linecap="round"/>
-    <path d="M34 54 Q42 50 50 54" stroke="#4A3A10" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="80" cy="56" rx="7" ry="4" fill="#4A3A10"/>
-    <path d="M46 84 Q62 78 76 86" stroke="#4A3A10" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="96" cy="30" r="9" fill="#fff" stroke="#C9A227" stroke-width="2"/><text x="96" y="35" text-anchor="middle" font-size="14" font-weight="700" fill="#C9A227">?</text>`,
-  think:`<circle cx="60" cy="60" r="52" fill="#FFD966" stroke="#C9A227" stroke-width="3"/>
-    <circle cx="44" cy="52" r="6" fill="#4A3A10"/><circle cx="78" cy="52" r="6" fill="#4A3A10"/><circle cx="46" cy="50" r="2" fill="#fff"/><circle cx="80" cy="50" r="2" fill="#fff"/>
-    <path d="M48 82 H74" stroke="#4A3A10" stroke-width="5" stroke-linecap="round"/><circle cx="88" cy="86" r="10" fill="#F2C744" stroke="#C9A227" stroke-width="2"/><path d="M82 80 L90 74" stroke="#C9A227" stroke-width="3" stroke-linecap="round"/>`,
-  go:`<circle cx="60" cy="60" r="52" fill="#FFD966" stroke="#C9A227" stroke-width="3"/>
-    <path d="M34 50 Q42 40 50 50" stroke="#4A3A10" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M70 50 Q78 40 86 50" stroke="#4A3A10" stroke-width="5" fill="none" stroke-linecap="round"/>
-    <path d="M38 70 Q60 98 82 70 Z" fill="#7A2E1E"/><path d="M48 80 Q60 90 72 80" fill="#F07A7A"/><path d="M98 34 q4 8 0 14 q-4 -6 0 -14Z" fill="#7EC8F0"/>`,
-  rest:`<circle cx="60" cy="60" r="52" fill="#FFE6A8" stroke="#C9A227" stroke-width="3"/>
-    <path d="M34 54 Q42 60 50 54" stroke="#4A3A10" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M70 54 Q78 60 86 54" stroke="#4A3A10" stroke-width="5" fill="none" stroke-linecap="round"/>
-    <ellipse cx="60" cy="80" rx="7" ry="5" fill="#7A2E1E"/><circle cx="38" cy="68" r="6" fill="#FFB0A0" opacity=".6"/><circle cx="82" cy="68" r="6" fill="#FFB0A0" opacity=".6"/>
-    <text x="92" y="30" font-size="18" font-weight="700" fill="#6F9BE0">z</text><text x="102" y="18" font-size="13" font-weight="700" fill="#6F9BE0">z</text>`};
-const face=k=>`<svg class="face" viewBox="0 0 120 120" aria-hidden="true">${FACES[k]}</svg>`;
-/* each question: [question, yes label, no label, yes → node, no → node] */
+/* ---------- "今天真的很不想運動" decision cards ----------
+   Every outcome says whether it rests on research (📚, with the source) or is a general tip (💡). */
+const R=t=>({k:'r',t}), T=t=>({k:'t',t});
+const SRC={
+  neck:'醫師常用的「脖子檢查」原則（Mayo Clinic）：症狀只在脖子以上通常可以輕度運動；發燒、胸口或全身不舒服就先別運動',
+  sleep:'回顧研究：睡不夠時，肌力、耐力和反應時間都會下降',
+  period:'Cochrane 回顧（12 篇研究、854 位女性）：運動可能減輕經痛，但證據品質偏低',
+  snack:'營養指南（Tufts）：運動前 30–60 分鐘吃點碳水小點心；只剩 15 分鐘才吃就太晚了',
+  night:'統合分析（Stutz 2019，23 篇研究）：晚上運動整體不會傷害睡眠，只有睡前 1 小時內的激烈運動可能影響入睡',
+  brain:'人們常低估運動有多愉快（Ruby 2011）；喬治亞大學整理的研究中，9 成的比較是運動後精神比坐著休息好',
+  mental:'Marcora 2009 與系統性回顧：用腦過度會讓運動「感覺」更累，但肌力和爆發力沒有變差',
+  mood:'統合分析（103 篇研究、4,671 人）：運動結束 30 分鐘內，心情、焦慮和憂鬱感通常都會改善',
+  anx:'統合分析：單次有氧運動能降低當下的焦慮，無氧運動比較沒有這個效果',
+  tired:'統合分析：輕到中強度、20 分鐘以上的運動，最能降低疲勞感'};
+const KIND={rest:['😴','今天休息！','rest'],go:['🏃','你應該去運動！','go'],easy:['🚶','去，但輕鬆版！','go'],peach:['🍑','經期輕版！','go'],
+  swap:['🔀','換個部位練！','go'],morning:['🌅','約好明天早上！','rest'],stretch:['🧘','伸展就好！','rest'],choose:['🤝','兩個都可以！','rest']};
+/* the lift day she has gone longest without this week */
+function leastRecent(){
+  const lifts=PARTS.filter(p=>p.k!=='period'); if(!lifts.length) return null;
+  const w=week||blankWeek(), notDone=lifts.filter(p=>!w.lifts[p.k]?.done), pool=notDone.length?notDone:lifts;
+  const lastDone=k=>Object.keys(allWeeks).filter(x=>x<wk&&allWeeks[x]?.lifts?.[k]?.done).sort().pop()||'';
+  return pool.slice().sort((a,b)=>lastDone(a.k)<lastDone(b.k)?-1:1)[0];
+}
 function deckNodes(){
-  const n=count(), afterSleep=SET.cycle?'q3':'q4';
+  const n=count(), lr=leastRecent(), part=lr?`${lr.n}日`:'有氧', first=lr&&menus?.[lr.k]?.length?`（${menus[lr.k].slice(0,2).map(m=>m.name).join('、')}）`:'';
+  const afterSleep=SET.cycle?'q5':'q6';
   return{
     start:{intro:true},
-    q1:['你是真的生病、受傷，或發燒了嗎？','是，真的不舒服','沒有啦','r_sick','q2'],
-    q2:['昨天睡不到 6 小時？','對，睡很少','有睡飽','q2b',afterSleep],
-    q2b:['現在眼皮重到可以夾住一支筆？','可以，超睏','還撐得住','r_sleep',afterSleep],
-    q3:['現在是經期，而且肚子很不舒服？','是，很不舒服','還好','r_period','q4'],
-    q4:['老實說，是「真的很累」，還是「想到就覺得累」？','真的很累','想到就累','q5','r_brain'],
-    q5:[`這週的籃子已經摘了一半以上嗎？（現在 ${n}/${GOAL}）`,'有，超過一半','還沒','q6','r_mini'],
-    q6:['如果只做熱身＋第一個動作，做完就能回家，你願意嗎？','好啦可以','連這個都不想','r_mini','r_earned'],
-    r_sick:{go:false,line:'身體在求救。今天的任務是躺好、多喝水。'},
-    r_sleep:{go:false,line:'肌肉是在睡覺時長的。今天早點睡，也算在訓練。'},
-    r_period:{go:false,line:'冬天就好好過冬。真的想動，做 10 分鐘伸展就算數。'},
-    r_brain:{go:true,line:'那是腦袋在播誇張的預告片。實際去了，通常沒那麼痛。'},
-    r_mini:{go:true,line:'只要熱身＋第一個動作，做完想走就走。水果在等你！'},
-    r_earned:{go:false,line:'這週已經很努力了。今天休息，明天再來摘。'}};
+    q1:{q:'你現在有發燒嗎？',o:[['有','額頭燙燙的、體溫超過 37.5 度、一直發冷','r_fever'],['沒有','','q2']]},
+    q2:{q:'有感冒症狀嗎？不舒服的地方在哪？',o:[['只有鼻子、喉嚨','鼻塞、流鼻水、打噴嚏、喉嚨癢癢的','r_cold_light'],['胸口或全身','咳嗽有痰、胸悶、全身痠痛、拉肚子、想吐','r_cold_rest'],['沒有感冒','','q3']]},
+    q3:{q:'身體有哪裡在痛嗎？',o:[['一個很明確的點在痛','例如膝蓋某一點、手腕、下背某處；一動就刺痛或腫起來','q3a'],['整塊肌肉痠痠的','前幾天練過的地方，按下去很痠','q3b'],['都沒有','','q4']]},
+    q3a:{q:'痛到走路、拿東西都受影響嗎？',o:[['是','','r_injury'],['不會','只有某些動作會痛','r_swap']]},
+    q3b:{q:'痠了幾天？',o:[['1–3 天','','r_doms'],['4 天以上，或越來越痛','','r_overtrain']]},
+    q4:{q:'昨晚睡了多久？',o:[['6 小時以上','',afterSleep],['不到 6 小時','','q4a']]},
+    q4a:{q:'現在睏到眼睛快閉上了嗎？',o:[['是，超睏','','r_sleep'],['還撐得住','','r_sleep_light']]},
+    q5:{q:'現在是經期嗎？',o:[['不是','','q6'],['是','','q5a']]},
+    q5a:{q:'痛的程度？',o:[['很痛','要吃止痛藥、只想躺平','r_period_rest'],['悶悶的痛','','r_period_light'],['還好，不太痛','','q6']]},
+    q6:{q:'肚子現在怎麼樣？',o:[['很餓','','t_hungry'],['剛吃很飽','','t_full'],['剛剛好','','q7']]},
+    q7:{q:'現在離你睡覺還有多久？',o:[['2 小時以上','','q8'],['1–2 小時','','t_late'],['不到 1 小時','','q7a']]},
+    q7a:{q:'明天早上真的會起來運動嗎？',sub:'誠實回答就好',o:[['會，已經想好幾點','','r_morning'],['不太確定','','r_stretch_night']]},
+    q8:{q:'老實說，你累的是哪一種？',o:[['想到就累','還沒開始就覺得好累，但身體其實還好','r_brain'],['腦袋當機','上班用腦過度，不想再做任何決定','r_nobrain'],['心情很差','','q8a'],['身體真的累','腿很重、全身沒力','q9']]},
+    q8a:{q:'比較像哪一種心情？',o:[['😔 低落、提不起勁','不想做任何事、什麼都覺得沒意思','q8b'],['😰 焦慮、腦袋停不下來','一直想事情、心跳快、靜不下來','r_anx'],['😤 煩躁、生氣','看什麼都不順眼','r_angry'],['🫠 心很累、被掏空','最近壓力很大，情緒一直撐著','q8c'],['💔 發生了很難過的事','吵架、失戀、壞消息','r_sad']]},
+    q8b:{q:'想出門嗎？',o:[['想','','r_low_walk'],['不想見人','','r_low_home']]},
+    q8c:{q:'這種感覺已經持續超過兩週了嗎？',o:[['是','','r_burn_rest'],['還沒','','r_burn_choose']]},
+    q9:{q:'願意走過去，做 20–30 分鐘輕鬆的嗎？',o:[['願意','','r_easy20'],['不願意','','q10']]},
+    q10:{q:`這週已經摘到一半以上的水果了嗎？`,sub:`現在 ${n}/${GOAL} 顆`,o:[['有','','r_earned'],['還沒','','r_tomorrow']]},
+    t_hungry:{tip:'先吃一根香蕉或一片吐司，30 分鐘後再出門。',ev:R(SRC.snack),to:'q7'},
+    t_full:{tip:'先散步一下，或等 1 小時再開始。',ev:T('剛吃飽就激烈運動容易肚子不舒服'),to:'q7'},
+    t_late:{tip:'今天做中等強度就好，不要練到上氣不接下氣。',ev:R(SRC.night),to:'q8'},
+    r_fever:{v:'rest',line:'多喝水、早點睡，等燒退了再回來摘水果。',ev:R(SRC.neck)},
+    r_cold_light:{v:'easy',line:'散步、輕踩飛輪或伸展，強度減半；越動越不舒服就停。',ev:R(SRC.neck)},
+    r_cold_rest:{v:'rest',line:'身體正在對抗病毒，把力氣留給它。',ev:R(SRC.neck)},
+    r_injury:{v:'rest',line:'冰敷、休息；痛超過 3 天就去看醫生。',ev:T('會讓動作變形、固定一點的尖銳疼痛，通常是受傷訊號，不是一般痠痛')},
+    r_swap:{v:'swap',line:`避開痛的地方：今天改練${part}，或做不會用到那裡的有氧。`,ev:T('局部不舒服時，換練其他部位是常見做法')},
+    r_doms:{v:'go',line:`練別的部位（例如${part}），或做輕鬆的有氧；動一動反而好得比較快。`,ev:T('延遲性肌肉痠痛通常 1–3 天會退，輕度活動有助恢復')},
+    r_overtrain:{v:'rest',line:'給身體幾天恢復，這幾天散步就好。',ev:T('教練常用的過度訓練訊號：痠痛超過 3–4 天、輕鬆的課表也變得很吃力')},
+    r_sleep:{v:'rest',line:'今天早點睡，肌肉是在睡覺時長的。',ev:R(SRC.sleep)},
+    r_sleep_light:{v:'easy',line:'今天不要挑戰重量，熟悉的動作做輕一點。',ev:R(SRC.sleep)},
+    r_period_rest:{v:'rest',line:'熱敷肚子、多喝溫水，好好過冬。',ev:T('痛到需要止痛藥時，先讓身體休息')},
+    r_period_light:{v:'peach',line:'做 20 分鐘瑜珈或輕重量，舒服就好。',ev:R(SRC.period)},
+    r_morning:{v:'morning',line:'現在就把運動服放床邊、鬧鐘設好。',ev:T('先把明天要用的東西準備好，比較容易真的做到')},
+    r_stretch_night:{v:'stretch',line:'現在做 15 分鐘伸展，然後去睡覺。',ev:R(SRC.night)},
+    r_brain:{v:'go',line:'那是腦袋在播誇張的預告片，實際去了通常沒那麼痛。',ev:R(SRC.brain)},
+    r_nobrain:{v:'go',line:`不用想，照做：熱身 → ${part}的前兩個動作${first} → 收操，30 分鐘結束。`,ev:R(SRC.mental)},
+    r_low_walk:{v:'easy',line:'出去快走 20 分鐘，不用去健身房也算。',ev:R(SRC.mood)},
+    r_low_home:{v:'stretch',line:'在家伸展或跟著影片動 15 分鐘；先拉開窗簾、把燈打開。',ev:R(SRC.mood)},
+    r_anx:{v:'easy',line:'快走、飛輪或慢跑 20–30 分鐘，節奏穩定的最好；今天不挑戰新重量。',ev:R(SRC.anx)},
+    r_angry:{v:'go',line:'用熟悉的動作和平常的重量，配節奏快的音樂；今天不破紀錄。',ev:T('生氣時注意力比較差，挑熟悉的動作比較安全')},
+    r_burn_rest:{v:'rest',line:'今天選真正能充電的事，睡覺、跟朋友聊天都好。如果一直沒好轉，找信任的人或專業的人聊聊。',ev:T('長期的壓力需要的不只是運動')},
+    r_burn_choose:{v:'choose',line:'散步 20 分鐘透透氣，或好好休息，兩個都算照顧自己。',ev:T('心很累的時候，選讓你覺得被照顧的那個')},
+    r_sad:{v:'rest',line:'今天先照顧心情。想動的話，散步 20 分鐘就好，不用打卡也沒關係。',ev:T('難過的時候，休息本身就是在照顧自己')},
+    r_easy20:{v:'easy',line:'快走、輕踩飛輪或伸展 20–30 分鐘就好。',ev:R(SRC.tired)},
+    r_earned:{v:'rest',line:'這週已經很努力了，好好休息。',ev:T('休息日也是訓練的一部分')},
+    r_tomorrow:{v:'rest',line:'今天休息，明天把運動排在第一件事。',ev:T('累到不想動的日子，好好睡一覺通常比硬撐更划算')}};
 }
+const evHTML=e=>e?`<p class="ev ${e.k}">${e.k==='r'?'📚 研究指出：':'💡 一般建議：'}${e.t}</p>`:'';
 let deckPath=[], deckDir='';
 function openDeck(){deckPath=['start'];deckDir='';$('#deck').hidden=false;document.documentElement.style.overflow='hidden';renderDeck()}
 function closeDeck(){$('#deck').hidden=true;document.documentElement.style.overflow=''}
 function renderDeck(){
-  const N=deckNodes(), id=deckPath[deckPath.length-1], node=N[id], qs=deckPath.filter(x=>x.startsWith('q')).length;
-  const top=`<div class="deck-top">${deckPath.length>1&&!id.startsWith('r_')?'<button class="back" data-act="dback">← 上一題</button>':'<span></span>'}<button class="xbtn" data-act="dclose" aria-label="關閉">✕</button></div>`;
+  const N=deckNodes(), id=deckPath[deckPath.length-1], node=N[id], qn=deckPath.filter(x=>x.startsWith('q')).length, isEnd=id.startsWith('r_');
+  const top=`<div class="deck-top">${deckPath.length>1&&!isEnd?'<button class="back" data-act="dback">← 上一題</button>':'<span></span>'}<button class="xbtn" data-act="dclose" aria-label="關閉">✕</button></div>`;
   let card;
-  if(node.intro) card=`${face('sus')}<h3>嗯？你確定嗎？</h3><p>先別急著躺平。回答幾個問題，讓水果籃幫你判斷今天該去還是該休息。</p>
+  if(node.intro) card=`<div class="emo" aria-hidden="true">🤨</div><h3>嗯？你確定嗎？</h3><p>先別急著躺平。回答幾個問題，讓水果籃幫你判斷今天該去還是該休息。</p>
     <div class="answers"><button class="pri" data-act="dnext" data-to="q1">好，問吧</button></div>`;
-  else if(Array.isArray(node)) card=`${face('think')}<span class="qno">第 ${qs} 題</span><h3>${node[0]}</h3>
-    <div class="answers"><button data-act="dnext" data-to="${node[3]}">${node[1]}</button><button data-act="dnext" data-to="${node[4]}">${node[2]}</button></div>`;
+  else if(node.q) card=`<div class="emo" aria-hidden="true">🤔</div><span class="qno">第 ${qn} 題</span><h3>${node.q}</h3>${node.sub?`<p>${node.sub}</p>`:''}
+    <div class="answers">${node.o.map(([t,ex,to])=>`<button data-act="dnext" data-to="${to}">${t}${ex?`<small>${ex}</small>`:''}</button>`).join('')}</div>`;
+  else if(node.tip) card=`<div class="emo" aria-hidden="true">💡</div><h3>${node.tip}</h3>${evHTML(node.ev)}
+    <div class="answers"><button class="pri" data-act="dnext" data-to="${node.to}">知道了，下一題</button></div>`;
   else card=`<div class="drum" id="drum" aria-live="polite"></div><div id="verdict" hidden></div>`;
   $('#deck').innerHTML=top+`<div class="dcard ${deckDir}">${card}</div>`;
-  if(id.startsWith('r_')) drumroll(node);
+  if(isEnd) drumroll(node);
 }
 function drumroll(node){
-  const words=['登','、登','、登','、登……'], drum=$('#drum');
+  const words=['登','、登','、登','、登……'], drum=$('#drum'), [emo,title,tone0]=KIND[node.v], go=tone0==='go';
   words.forEach((w,i)=>setTimeout(()=>{if($('#deck').hidden)return;drum.insertAdjacentHTML('beforeend',`<span>${w}</span>`);if(soundOn){tone(98,0,.22,'triangle',.3,60);tone(196,0,.08,'square',.04)}},i*420));
   setTimeout(()=>{if($('#deck').hidden)return;const v=$('#verdict');v.hidden=false;
-    v.innerHTML=`${face(node.go?'go':'rest')}<h3 class="verdict${node.go?'':' rest'}">${node.go?'你應該去運動！':'今天休息！'}</h3><p>${node.line}</p>
-      <div class="answers">${node.go?'<button class="pri" data-act="dgo">好啦我去</button>':'<button class="pri" data-act="dclose">好好休息</button>'}<button data-act="dagain">重來一次</button></div>`;
-    if(node.go){rain(['grape','berry','melon','peach','banana','cherry'],26);if(soundOn)SFX.full()}
-    else{if(!reduceMotion())for(let i=0;i<6;i++){const z=document.createElement('span');z.className='zz';z.textContent=i%2?'z':'Z';z.style.left=(30+Math.random()*40)+'%';z.style.top='62%';z.style.setProperty('--dx',(Math.random()*80-40)+'px');z.style.animationDelay=i*.25+'s';document.body.appendChild(z);setTimeout(()=>z.remove(),4000)}
+    v.innerHTML=`<div class="emo" aria-hidden="true">${emo}</div><h3 class="verdict${go?'':' rest'}">${title}</h3><p>${node.line}</p>${evHTML(node.ev)}
+      <div class="answers">${go?'<button class="pri" data-act="dgo">好啦我去</button>':'<button class="pri" data-act="dclose">好，聽你的</button>'}<button data-act="dagain">重來一次</button></div>`;
+    v.style.cssText='display:flex;flex-direction:column;align-items:center;gap:14px;width:100%';
+    if(node.v==='go'){rain(['grape','berry','melon','peach','banana','cherry'],26);if(soundOn)SFX.full()}
+    else if(go){const [cx,cy]=centerOf($('#verdict .emo'));burst(cx,cy,['grape','berry','#FFD54A','#7FD39A'],12,140);if(soundOn)SFX.stamp()}
+    else{if(!reduceMotion())for(let i=0;i<6;i++){const z=document.createElement('span');z.className='zz';z.textContent=i%2?'z':'Z';z.style.left=(30+Math.random()*40)+'%';z.style.top='40%';z.style.setProperty('--dx',(Math.random()*80-40)+'px');z.style.animationDelay=i*.25+'s';document.body.appendChild(z);setTimeout(()=>z.remove(),4000)}
       if(soundOn)[784,659,523,392].forEach((f,i)=>tone(f,i*.18,.5,'sine',.09))}
   },words.length*420+250);
 }

@@ -539,6 +539,8 @@ details.menu summary span{font-size:12px;color:var(--muted)}
     </div>
     <div class="goalrow" style="border:0;padding-top:4px"><span></span><div><b>音效</b><small>採收、打卡和裝滿時的小聲音</small></div>
       <button class="sw" role="switch" id="soundSw" aria-label="音效"></button></div>
+    <div class="goalrow" style="border:0;padding-top:4px"><span></span><div><b>配樂</b><small>〈Banana Track〉skrjablin（公眾領域）</small></div>
+      <button class="sw" role="switch" id="musicSw" aria-label="配樂"></button></div>
   </section>
 
   <p class="note" id="note">讀取中…</p>
@@ -564,7 +566,7 @@ details.menu summary span{font-size:12px;color:var(--muted)}
 
 <script>
 /* bumped by scripts/release.sh; must match version.json on release */
-const APP_VERSION='2026.10.25-0003';
+const APP_VERSION='2026.10.31-0250';
 /* every person sets their own week: which lift days, how many cardio sessions, cycle on/off */
 const LIFT_SLOTS=[{k:'back',def:'背',fruit:'grape'},{k:'chest',def:'胸',fruit:'berry'},{k:'legs',def:'腿',fruit:'melon'}];
 const DEFAULT_SET={parts:{back:{on:true,name:'背'},chest:{on:true,name:'胸'},legs:{on:true,name:'腿'}},cardio:3,cardioName:'有氧',cycle:true,pain:true};
@@ -1252,7 +1254,15 @@ const SFX={
   full(){[523,659,784,1047,1319].forEach((f,i)=>tone(f,i*.08,.4,'triangle',.1));tone(2093,.45,.5,'sine',.05)},
   jam(){tone(180,0,.25,'sine',.16,90);tone(240,.18,.25,'sine',.12,120)}};
 function play(n){if(soundOn)SFX[n]?.()}
+/* ---------- music: one looping track; iOS only starts audio after a tap ---------- */
+const BGM=new Audio('audio/bgm-banana.m4a');BGM.loop=true;BGM.volume=.3;BGM.preload='none';
+let musicOn=local.get('music')!==false, tapped=false;
+const playBgm=()=>{if(musicOn&&tapped&&!document.hidden)BGM.play().catch(()=>{})};
+document.addEventListener('pointerdown',()=>{if(!tapped){tapped=true;playBgm()}},{capture:true});
+document.addEventListener('visibilitychange',()=>{document.hidden?BGM.pause():playBgm()});
 $('#soundSw').setAttribute('aria-checked',soundOn);
+$('#musicSw').setAttribute('aria-checked',musicOn);
+$('#musicSw').addEventListener('click',()=>{musicOn=!musicOn;local.set('music',musicOn);$('#musicSw').setAttribute('aria-checked',musicOn);tapped=true;musicOn?playBgm():BGM.pause()});
 $('#soundSw').addEventListener('click',()=>{soundOn=!soundOn;local.set('sound',soundOn);$('#soundSw').setAttribute('aria-checked',soundOn);if(soundOn)play('pop')});
 
 /* ---------- effects ---------- */

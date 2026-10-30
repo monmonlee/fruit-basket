@@ -40,3 +40,5 @@ scripts/release.sh "這次改了什麼"
 ## 授權與致謝
 
 水果圖示（`icons/fruit/`）來自 [Google Noto Emoji](https://github.com/googlefonts/noto-emoji)，授權與說明見 `third_party/noto-emoji/`。
+
+配樂（`audio/bgm-banana.m4a`）是 OpenGameArt 上 skrjablin 的〈[Banana Track](https://opengameart.org/content/banana-track)〉，作者以公眾領域釋出，轉檔為 AAC。
